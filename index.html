@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Control de Horas Extras - EMELNOR</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Load ExcelJS local script -->
+  <script src="exceljs.min.js"></script>
+  <!-- Load Firebase SDK (compat version for easy browser load) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics-compat.js"></script>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar: Settings & Personal Info -->
+    <aside class="sidebar">
+      <h2>
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+        </svg>
+        Configuración
+      </h2>
+      
+      <!-- Personal Details Card -->
+      <div class="form-group">
+        <label for="employee-name">Funcionario(a)</label>
+        <input type="text" id="employee-name" class="form-input" placeholder="Nombre completo" value="MARCO GARRIDO">
+      </div>
+      <div class="form-group">
+        <label for="employee-role">Cargo</label>
+        <input type="text" id="employee-role" class="form-input" placeholder="Ej. Ingeniero de Sistemas">
+      </div>
+      <div class="form-group">
+        <label for="employee-area">Área</label>
+        <input type="text" id="employee-area" class="form-input" placeholder="Ej. Sistemas" value="Sistemas">
+      </div>
+      <div class="form-group">
+        <label for="employee-card">N° Tarjeta / Rut</label>
+        <input type="text" id="employee-card" class="form-input" placeholder="Ej. 1234">
+      </div>
+      <div class="form-group">
+        <label for="employee-manager">Jefe directo</label>
+        <input type="text" id="employee-manager" class="form-input" placeholder="Nombre jefe directo" value="Carlos Rodriguez">
+      </div>
+      
+      <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 0.5rem 0;">
+      
+      <!-- Period Selector -->
+      <div class="form-group">
+        <label for="period-year">Año</label>
+        <select id="period-year">
+          <option value="2025">2025</option>
+          <option value="2026" selected>2026</option>
+          <option value="2027">2027</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label for="period-month">Mes del Reporte</label>
+        <select id="period-month">
+          <option value="0">Enero</option>
+          <option value="1">Febrero</option>
+          <option value="2">Marzo</option>
+          <option value="3">Abril</option>
+          <option value="4" selected>Mayo</option>
+          <option value="5">Junio</option>
+          <option value="6">Julio</option>
+          <option value="7">Agosto</option>
+          <option value="8">Septiembre</option>
+          <option value="9">Octubre</option>
+          <option value="10">Noviembre</option>
+          <option value="11">Diciembre</option>
+        </select>
+      </div>
+      
+      <div class="checkbox-group">
+        <input type="checkbox" id="complete-week" checked>
+        <label for="complete-week">Extender mes al domingo</label>
+      </div>
+
+      <div class="form-group" style="margin-top: 0.5rem;">
+        <label>Rango Generado</label>
+        <div id="date-range-display" style="font-size: 0.8rem; font-weight: 600; color: var(--primary-color);">
+          Cargando...
+        </div>
+      </div>
+
+      <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 0.5rem 0;">
+
+      <!-- Actions -->
+      <div class="btn-group-vertical">
+        <button id="btn-export-excel" class="btn btn-primary">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+          </svg>
+          Exportar a Excel
+        </button>
+        <button id="btn-export-backup" class="btn btn-secondary">
+          Exportar Respaldo (JSON)
+        </button>
+        <button id="btn-import-backup" class="btn btn-secondary">
+          Importar Respaldo (JSON)
+        </button>
+        <input type="file" id="file-import" style="display: none;" accept=".json">
+        <button id="btn-clear-data" class="btn btn-danger">
+          Limpiar Datos
+        </button>
+      </div>
+      
+      <div id="status-message" class="status-msg" style="display: none;"></div>
+    </aside>
+
+    <!-- Main Panel: Table & Calculations -->
+    <main class="main-panel">
+      <header class="panel-header">
+        <h1>Convenio y Control de Horas Extraordinarias</h1>
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <div id="sync-status" class="sync-indicator offline" title="Estado de sincronización con la nube">
+            <span class="dot"></span> <span class="label">Conectando...</span>
+          </div>
+          <button id="theme-toggle" class="theme-toggle-btn" title="Cambiar Tema">
+            🌙
+          </button>
+        </div>
+      </header>
+
+      <!-- Totals Metrics Cards -->
+      <section class="totals-grid">
+        <div class="total-card primary">
+          <span class="label">Horas Trabajadas</span>
+          <span id="metric-total-worked" class="value">0.00</span>
+        </div>
+        <div class="total-card accent-1">
+          <span class="label">Horas Normales</span>
+          <span id="metric-normal" class="value">0.00</span>
+        </div>
+        <div class="total-card accent-2">
+          <span class="label">Total Horas Extras</span>
+          <span id="metric-extras" class="value">0.00</span>
+        </div>
+        <div class="total-card accent-1">
+          <span class="label">Extras al 50%</span>
+          <span id="metric-extras-50" class="value">0.00</span>
+        </div>
+        <div class="total-card accent-3">
+          <span class="label">Extras al 100% (Dom/Fer)</span>
+          <span id="metric-extras-100" class="value">0.00</span>
+        </div>
+      </section>
+
+      <!-- Tabs for Desktop/Mobile view modes -->
+      <div class="tabs-container">
+        <button id="tab-form" class="tab-btn active">📝 Registrar Día (Formulario)</button>
+        <button id="tab-table" class="tab-btn">📊 Vista Planilla (Tabla)</button>
+      </div>
+
+      <!-- Tab 1: Form Content Panel -->
+      <div id="panel-form-content" class="tab-panel active">
+        <div class="card" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
+            <div class="form-group" style="flex: 1; min-width: 200px;">
+              <label for="form-day-select">Seleccionar Día del Período</label>
+              <select id="form-day-select">
+                <!-- Dynamically populated options -->
+              </select>
+            </div>
+            <div class="form-group" style="justify-content: flex-end; padding-top: 1.2rem;">
+              <button id="form-btn-feriado" class="btn btn-secondary" style="font-size: 0.85rem; height: 38px;">
+                🎈 Marcar Feriado
+              </button>
+            </div>
+          </div>
+
+          <!-- Shifts grid inside form -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;">
+            <div class="form-group card" style="background-color: var(--saturday-bg); padding: 0.75rem; gap: 0.5rem;">
+              <label style="font-weight: 700; color: var(--primary-color);">1ª Jornada (Turno 1)</label>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                <div>
+                  <label style="font-size: 0.65rem;">Entrada</label>
+                  <input type="text" id="form-ent-1" class="form-input form-time-input" placeholder="--:--" maxlength="5">
+                </div>
+                <div>
+                  <label style="font-size: 0.65rem;">Salida</label>
+                  <input type="text" id="form-sal-1" class="form-input form-time-input" placeholder="--:--" maxlength="5">
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group card" style="background-color: var(--saturday-bg); padding: 0.75rem; gap: 0.5rem;">
+              <label style="font-weight: 700; color: var(--primary-color);">2ª Jornada (Turno 2)</label>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                <div>
+                  <label style="font-size: 0.65rem;">Entrada</label>
+                  <input type="text" id="form-ent-2" class="form-input form-time-input" placeholder="--:--" maxlength="5">
+                </div>
+                <div>
+                  <label style="font-size: 0.65rem;">Salida</label>
+                  <input type="text" id="form-sal-2" class="form-input form-time-input" placeholder="--:--" maxlength="5">
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group card" style="background-color: var(--saturday-bg); padding: 0.75rem; gap: 0.5rem;">
+              <label style="font-weight: 700; color: var(--primary-color);">3ª Jornada (Turno 3)</label>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                <div>
+                  <label style="font-size: 0.65rem;">Entrada</label>
+                  <input type="text" id="form-ent-3" class="form-input form-time-input" placeholder="--:--" maxlength="5">
+                </div>
+                <div>
+                  <label style="font-size: 0.65rem;">Salida</label>
+                  <input type="text" id="form-sal-3" class="form-input form-time-input" placeholder="--:--" maxlength="5">
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group card" style="background-color: var(--saturday-bg); padding: 0.75rem; gap: 0.5rem;">
+              <label style="font-weight: 700; color: var(--primary-color);">4ª Jornada (Turno 4)</label>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                <div>
+                  <label style="font-size: 0.65rem;">Entrada</label>
+                  <input type="text" id="form-ent-4" class="form-input form-time-input" placeholder="--:--" maxlength="5">
+                </div>
+                <div>
+                  <label style="font-size: 0.65rem;">Salida</label>
+                  <input type="text" id="form-sal-4" class="form-input form-time-input" placeholder="--:--" maxlength="5">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Comment inside form -->
+          <div class="form-group">
+            <label for="form-comment">Motivo de Horas Extraordinarias (Comentario)</label>
+            <input type="text" id="form-comment" class="form-input" placeholder="Ej. asistiendo usuarios conexión casa, hasta las 21:20">
+          </div>
+
+          <div style="display: flex; gap: 1rem; align-items: center; margin-top: 0.5rem;">
+            <button id="form-btn-save-next" class="btn btn-primary" style="flex: 1;">
+              Guardar y Siguiente Día →
+            </button>
+            <button id="form-btn-clear" class="btn btn-secondary">
+              Limpiar Día
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 2: Table Content Panel -->
+      <div id="panel-table-content" class="tab-panel">
+        <div class="table-container">
+          <table id="payroll-table" class="payroll-table">
+            <thead>
+              <tr class="header-row-1">
+                <th rowspan="2" style="width: 50px;">DÍA</th>
+                <th rowspan="2" style="width: 100px;">FECHA</th>
+                <th colspan="2">1ª</th>
+                <th colspan="2">2ª</th>
+                <th colspan="2">3ª</th>
+                <th colspan="2">4ª</th>
+                <th rowspan="2" style="width: 75px;">TPO. PERM.</th>
+                <th colspan="3">HORAS PERM.</th>
+                <th colspan="3">N° DE HORAS</th>
+                <th rowspan="2">MOTIVO DE HORAS EXTRAORDINARIAS</th>
+                <th rowspan="2" style="width: 70px;">ESTADO</th>
+              </tr>
+              <tr class="header-row-2">
+                <th class="col-shift">ENT.</th>
+                <th class="col-shift">SAL.</th>
+                <th class="col-shift">ENT.</th>
+                <th class="col-shift">SAL.</th>
+                <th class="col-shift">ENT.</th>
+                <th class="col-shift">SAL.</th>
+                <th class="col-shift">ENT.</th>
+                <th class="col-shift">SAL.</th>
+                <th style="width: 40px;">H</th>
+                <th style="width: 45px;">MIN. DEC.</th>
+                <th style="width: 55px;">TOTAL DEC.</th>
+                <th style="width: 55px;">Total</th>
+                <th style="width: 55px;">Norm.</th>
+                <th style="width: 55px;">Extras</th>
+              </tr>
+            </thead>
+            <tbody id="payroll-tbody">
+              <!-- Dynamically populated rows -->
+            </tbody>
+            <tfoot>
+              <tr style="background-color: var(--saturday-bg); font-weight: 700;">
+                <td colspan="10" class="center">TOTALES PERÍODO</td>
+                <td id="foot-tpo-perm" class="center">-</td>
+                <td id="foot-horas-h" class="center">-</td>
+                <td id="foot-horas-min" class="center">-</td>
+                <td id="foot-horas-total-dec" class="center">0.00</td>
+                <td id="foot-summary-total" class="center">0.00</td>
+                <td id="foot-summary-norm" class="center">0.00</td>
+                <td id="foot-summary-extras" class="center">0.00</td>
+                <td colspan="2">
+                  <div style="display: flex; gap: 1rem; align-items: center; justify-content: flex-end; font-size: 0.75rem;">
+                    <span style="background-color: var(--sunday-free-bg); color: var(--sunday-free-text); padding: 2px 6px; border: 1px solid var(--border-color); border-radius: 3px; font-weight: 700;">
+                      50%
+                    </span>
+                    <span style="background-color: #d1fae5; color: #065f46; padding: 2px 6px; border: 1px solid var(--border-color); border-radius: 3px; font-weight: 700;">
+                      100%
+                    </span>
+                  </div>
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      <!-- Legal Context Card -->
+      <section class="legal-text-card">
+        <p><strong>Primero:</strong> A través del presente documento, el trabajador quien suscribe el presente convenio y autorización de horas extraordinarias, acepta y reconoce que las horas extraordinarias aquí expuestas son las únicas horas trabajadas con autorización del empleador y consecuentemente reconoce que son las que deben ser canceladas como tal.</p>
+        <p><strong>Segundo:</strong> Los abajo firmantes declaran que las horas de entrada y salida señaladas en el presente documento, son fiel reflejo de lo registrado en las tarjetas de control de asistencia utilizadas formal y oficialmente por el Empleador, expresando su conformidad con los cálculos y demás datos indicados.</p>
+      </section>
+
+      <!-- Signature Section -->
+      <footer class="signature-section">
+        <div class="signature-box">Firma Funcionario</div>
+        <div class="signature-box">Firma Jefe Directo</div>
+      </footer>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

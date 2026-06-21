@@ -1,0 +1,6 @@
+~$*.xlsx
+.system_generated/
+.firebase/
+.firebaserc
+firebase-debug.log
+hosting-debug.log
