@@ -718,6 +718,19 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const day = daysData[idx];
     
+    // Display full Spanish date under day dropdown
+    const daysOfWeekSpanish = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+    const monthsSpanish = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+    
+    const dObj = day.dateObj;
+    const dayNameStr = daysOfWeekSpanish[dObj.getDay()];
+    const monthNameStr = monthsSpanish[dObj.getMonth()];
+    const fullDateText = `${dayNameStr}, ${dObj.getDate()} de ${monthNameStr} de ${dObj.getFullYear()}`;
+    const fullDateDisplayEl = document.getElementById('form-full-date-display');
+    if (fullDateDisplayEl) {
+      fullDateDisplayEl.textContent = fullDateText;
+    }
+    
     // 1. Separate ticket from comment/motive
     let ticketVal = "";
     let motiveVal = day.comment || "";
@@ -745,16 +758,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const stdStart = getStandardStartTime(day.dayOfWeek);
     const stdEnd = getStandardEndTime(day.dayOfWeek);
 
-    if (day.dayOfWeek === 0 || day.isFeriado) {
+    const isRestDay = (day.dayOfWeek === 0 || day.isFeriado);
+
+    if (isRestDay) {
       // Sunday/Holiday: 1 shift (index 0, 1)
       entVal = day.shifts[0] || "";
       salVal = day.shifts[1] || "";
       deCorrido = true; // Always continuous on rest days
+      hasCustomHours = true; // Always show entrance for Sunday/Holiday
+      
+      const deCorridoWrapper = document.getElementById('form-de-corrido-wrapper');
+      if (deCorridoWrapper) deCorridoWrapper.style.display = 'none';
     } else if (day.dayOfWeek === 6) {
       // Saturday: 1 shift (index 0, 1)
       entVal = day.shifts[0] || "";
       salVal = day.shifts[1] || "";
       deCorrido = true;
+      hasCustomHours = (entVal !== "" && entVal !== stdStart);
+      
+      const deCorridoWrapper = document.getElementById('form-de-corrido-wrapper');
+      if (deCorridoWrapper) deCorridoWrapper.style.display = 'none';
     } else {
       // Weekdays: 2 shifts
       entVal = day.shifts[0] || "";
@@ -762,13 +785,10 @@ document.addEventListener('DOMContentLoaded', () => {
         deCorrido = true;
       }
       salVal = day.shifts[3] || day.shifts[1] || "";
-    }
-    
-    // Custom hours refers ONLY to custom entrance time
-    if (day.dayOfWeek === 0 || day.isFeriado) {
-      hasCustomHours = (entVal !== "");
-    } else {
       hasCustomHours = (entVal !== "" && entVal !== stdStart);
+      
+      const deCorridoWrapper = document.getElementById('form-de-corrido-wrapper');
+      if (deCorridoWrapper) deCorridoWrapper.style.display = 'flex';
     }
     
     formDeCorrido.checked = deCorrido;
@@ -805,20 +825,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const stdStart = getStandardStartTime(day.dayOfWeek);
     const stdEnd = getStandardEndTime(day.dayOfWeek);
     
-    const finalEnt = hasCustomHours ? entVal : stdStart;
+    const isRestDay = (isFeriado || day.dayOfWeek === 0);
+    const finalEnt = entVal || stdStart;
     const finalSal = salVal || stdEnd;
     
-    if (isFeriado || day.dayOfWeek === 0) {
-      if (hasCustomHours || motivo || ticket) {
+    if (isRestDay) {
+      // Only save shift on Sunday/Holiday if there is actual worked exit time or motive/ticket
+      if (salVal || motivo || ticket) {
         day.shifts = [finalEnt, finalSal, "", "", "", "", "", ""];
       } else {
         day.shifts = ["", "", "", "", "", "", "", ""];
       }
     } else if (day.dayOfWeek === 6) {
-      if (hasCustomHours || motivo || ticket) {
+      if (hasCustomHours || (salVal && salVal !== stdEnd) || motivo || ticket) {
         day.shifts = [finalEnt, finalSal, "", "", "", "", "", ""];
       } else {
-        day.shifts = ["", "", "", "", "", "", "", ""];
+        day.shifts = [stdStart, stdEnd, "", "", "", "", "", ""];
       }
     } else {
       if (deCorrido) {
