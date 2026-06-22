@@ -412,21 +412,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function loadMockOrEmpty(dates) {
-    if (currentYear === 2026 && currentMonth === 4) {
-      const mock = getMockDataForMay2026();
-      daysData = dates.map(d => {
-        const matched = mock.days.find(p => p.dateKey === d.dateKey);
-        return {
-          ...d,
-          isFeriado: matched ? matched.isFeriado : false,
-          comment: matched ? matched.comment : '',
-          shifts: matched ? matched.shifts : ['', '', '', '', '', '', '', '']
-        };
-      });
-      saveToFirebaseOnly();
-    } else {
-      generateEmptyDays(dates);
-    }
+    generateEmptyDays(dates);
     renderTable();
     populateFormDaySelect();
     loadFormDayData();
@@ -457,21 +443,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function loadMockOrEmptyLocal(dates) {
-    if (currentYear === 2026 && currentMonth === 4) {
-      const mock = getMockDataForMay2026();
-      daysData = dates.map(d => {
-        const matched = mock.days.find(p => p.dateKey === d.dateKey);
-        return {
-          ...d,
-          isFeriado: matched ? matched.isFeriado : false,
-          comment: matched ? matched.comment : '',
-          shifts: matched ? matched.shifts : ['', '', '', '', '', '', '', '']
-        };
-      });
-      saveLocalOnly();
-    } else {
-      generateEmptyDays(dates);
-    }
+    generateEmptyDays(dates);
   }
 
   function setSyncState(state) {
