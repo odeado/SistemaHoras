@@ -1162,10 +1162,15 @@ document.addEventListener('DOMContentLoaded', () => {
             data-day-idx="${rIdx}"
           >
         </td>
-        <td class="center" style="padding: 2px !important;">
-          <button class="btn-toggle-feriado" data-day-idx="${rIdx}">
-            ${isFeriado ? '☀️ Lab' : '🎈 Fer'}
-          </button>
+        <td class="center" style="padding: 4px !important;">
+          <div style="display: flex; gap: 4px; justify-content: center; align-items: center;">
+            <button class="btn-toggle-feriado" data-day-idx="${rIdx}" title="${isFeriado ? 'Marcar como Laborable' : 'Marcar como Feriado'}" style="padding: 4px 6px; font-size: 0.75rem;">
+              ${isFeriado ? '☀️ Lab' : '🎈 Fer'}
+            </button>
+            <button class="btn-delete-day" data-day-idx="${rIdx}" title="Limpiar Día" style="background-color: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; padding: 4px 6px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; line-height: 1;">
+              🗑️
+            </button>
+          </div>
         </td>
       `;
 
@@ -1245,6 +1250,12 @@ document.addEventListener('DOMContentLoaded', () => {
     toggleFeriadoBtns.forEach(btn => {
       btn.addEventListener('click', handleFeriadoToggle);
     });
+
+    // Handle Delete Day button click
+    const deleteDayBtns = payrollTbody.querySelectorAll('.btn-delete-day');
+    deleteDayBtns.forEach(btn => {
+      btn.addEventListener('click', handleDeleteDayClick);
+    });
   }
 
   // Auto formats HH:MM while typing
@@ -1301,6 +1312,21 @@ document.addEventListener('DOMContentLoaded', () => {
     daysData[dayIdx].isFeriado = !daysData[dayIdx].isFeriado;
     saveData();
     renderTable();
+  }
+
+  function handleDeleteDayClick(e) {
+    const btn = e.target.closest('.btn-delete-day');
+    if (!btn) return;
+    const dayIdx = parseInt(btn.dataset.dayIdx);
+    const day = daysData[dayIdx];
+    if (confirm(`¿Está seguro de que desea limpiar todos los turnos y comentarios registrados para el día ${day.dayNum}?`)) {
+      resetDayToDefault(day);
+      saveData();
+      renderTable();
+      populateFormDaySelect();
+      loadFormDayData();
+      showStatus(`Día ${day.dayNum} restablecido a su horario base`, "success");
+    }
   }
 
   // --- Show Status Messages ---
