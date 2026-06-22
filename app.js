@@ -254,11 +254,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize daysData empty
     generateEmptyDays(dates);
 
-    // If Firebase is initialized, start cloud sync. Otherwise, load local storage
+    // Always load local data first for instant render and offline capability
+    loadLocalStorageBackup(stored, dates);
+
+    // If Firebase is initialized, start cloud sync in background
     if (isFirebaseInitialized) {
       setupFirebaseSync();
-    } else {
-      loadLocalStorageBackup(stored, dates);
     }
   }
 
