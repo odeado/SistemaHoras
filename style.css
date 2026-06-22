@@ -71,10 +71,57 @@ body {
   margin: 0 auto;
 }
 
+#sidebar-toggle {
+  display: none;
+}
+
 @media (max-width: 1024px) {
   .app-container {
     grid-template-columns: 1fr;
   }
+  
+  #sidebar-toggle {
+    display: block;
+  }
+  
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: -340px;
+    width: 320px;
+    height: 100vh;
+    z-index: 1000;
+    border-radius: 0;
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow-y: auto;
+    background: var(--card-bg) !important;
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: none;
+    border-right: 1px solid var(--border-color);
+    box-shadow: none;
+  }
+  
+  .sidebar.show {
+    left: 0;
+    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.25);
+  }
+}
+
+/* Sidebar Backdrop */
+.sidebar-backdrop {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 999;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease;
+}
+
+.sidebar-backdrop.show {
+  display: block;
 }
 
 /* Sidebar & Cards - Glassmorphism */

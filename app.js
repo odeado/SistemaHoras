@@ -101,20 +101,21 @@ document.addEventListener('DOMContentLoaded', () => {
   const panelFormContent = document.getElementById('panel-form-content');
   const panelTableContent = document.getElementById('panel-table-content');
   const formDaySelect = document.getElementById('form-day-select');
-  const formBtnFeriado = document.getElementById('form-btn-feriado');
+  const formIsFeriado = document.getElementById('form-is-feriado');
+  const formDeCorrido = document.getElementById('form-de-corrido');
+  const formCustomHours = document.getElementById('form-custom-hours');
+  const formHoursContainer = document.getElementById('form-hours-container');
+  const formTicket = document.getElementById('form-ticket');
   const formComment = document.getElementById('form-comment');
+  const formEntTime = document.getElementById('form-ent-time');
+  const formSalTime = document.getElementById('form-sal-time');
   const formBtnSaveNext = document.getElementById('form-btn-save-next');
   const formBtnClear = document.getElementById('form-btn-clear');
-  const formTimeInputs = [
-    document.getElementById('form-ent-1'),
-    document.getElementById('form-sal-1'),
-    document.getElementById('form-ent-2'),
-    document.getElementById('form-sal-2'),
-    document.getElementById('form-ent-3'),
-    document.getElementById('form-sal-3'),
-    document.getElementById('form-ent-4'),
-    document.getElementById('form-sal-4')
-  ];
+
+  // Sidebar Mobile Selectors
+  const sidebar = document.querySelector('.sidebar');
+  const sidebarToggle = document.getElementById('sidebar-toggle');
+  const sidebarBackdrop = document.getElementById('sidebar-backdrop');
 
   // --- Initialization ---
   initApp();
@@ -487,54 +488,57 @@ document.addEventListener('DOMContentLoaded', () => {
     // Dropdown change
     formDaySelect.addEventListener('change', loadFormDayData);
 
-    // Save inputs in real-time when user types in form
-    formTimeInputs.forEach((input, sIdx) => {
-      input.addEventListener('input', formatTimeInput);
+    // Sidebar Mobile Toggle
+    if (sidebarToggle && sidebar && sidebarBackdrop) {
+      sidebarToggle.addEventListener('click', () => {
+        sidebar.classList.toggle('show');
+        sidebarBackdrop.classList.toggle('show');
+      });
+
+      sidebarBackdrop.addEventListener('click', () => {
+        sidebar.classList.remove('show');
+        sidebarBackdrop.classList.remove('show');
+      });
+    }
+
+    // Toggle custom hours visibility
+    formCustomHours.addEventListener('change', () => {
+      formHoursContainer.style.display = formCustomHours.checked ? 'grid' : 'none';
+      saveFormDayData();
+    });
+
+    // Time input auto-formatting while typing
+    formEntTime.addEventListener('input', formatTimeInput);
+    formSalTime.addEventListener('input', formatTimeInput);
+
+    // Save form data when fields change
+    [formEntTime, formSalTime, formTicket, formComment, formIsFeriado, formDeCorrido].forEach(input => {
       input.addEventListener('change', () => {
-        const dayIdx = parseInt(formDaySelect.value);
-        if (isNaN(dayIdx)) return;
-        
-        const val = input.value.trim();
-        let formattedVal = val;
-        
-        if (val !== "") {
-          if (val.length === 4 && val.indexOf(':') === 1) {
-            formattedVal = '0' + val;
+        // Validate time format if it's a time input
+        if (input === formEntTime || input === formSalTime) {
+          const val = input.value.trim();
+          if (val !== "") {
+            let formattedVal = val;
+            if (val.length === 4 && val.indexOf(':') === 1) {
+              formattedVal = '0' + val;
+            }
+            const regex = /^([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$/;
+            if (regex.test(formattedVal)) {
+              input.value = formattedVal;
+            } else {
+              showStatus("Formato de hora inválido (HH:MM)", "danger");
+              input.value = "";
+            }
           }
-          const regex = /^([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$/;
-          if (regex.test(formattedVal)) {
-            daysData[dayIdx].shifts[sIdx] = formattedVal;
-            input.value = formattedVal;
-          } else {
-            showStatus("Formato de hora inválido (HH:MM)", "danger");
-            daysData[dayIdx].shifts[sIdx] = "";
-            input.value = "";
-          }
-        } else {
-          daysData[dayIdx].shifts[sIdx] = "";
         }
-        
-        saveData();
-        updateTotalsAndLabels();
+        saveFormDayData();
       });
     });
 
-    formComment.addEventListener('change', () => {
-      const dayIdx = parseInt(formDaySelect.value);
-      if (isNaN(dayIdx)) return;
-      daysData[dayIdx].comment = formComment.value;
-      saveData();
-      updateTotalsAndLabels();
-    });
-
-    // Feriado Toggle in Form
-    formBtnFeriado.addEventListener('click', () => {
-      const dayIdx = parseInt(formDaySelect.value);
-      if (isNaN(dayIdx)) return;
-      daysData[dayIdx].isFeriado = !daysData[dayIdx].isFeriado;
-      saveData();
-      loadFormDayData();
-      updateTotalsAndLabels();
+    // Auto-parse times from motive/comment in real time
+    formComment.addEventListener('input', () => {
+      parseTimesFromComment();
+      saveFormDayData();
     });
 
     // Clear day in form
@@ -556,6 +560,8 @@ document.addEventListener('DOMContentLoaded', () => {
     formBtnSaveNext.addEventListener('click', () => {
       const dayIdx = parseInt(formDaySelect.value);
       if (isNaN(dayIdx)) return;
+      
+      saveFormDayData(); // Ensure saved
       
       // Advance dropdown
       if (dayIdx < daysData.length - 1) {
@@ -593,25 +599,234 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  function getStandardEndTime(dayOfWeek) {
+    switch (dayOfWeek) {
+      case 1: return "19:30"; // lunes
+      case 2:
+      case 3: return "18:30"; // martes, miércoles
+      case 4:
+      case 5: return "19:00"; // jueves, viernes
+      case 6: return "12:30"; // sábado
+      default: return ""; // domingo
+    }
+  }
+
+  function parseTimesFromComment() {
+    const commentVal = formComment.value.trim();
+    if (!commentVal) return;
+
+    // 1. Check for "de HH:MM a HH:MM"
+    const deAPattern = /(?:de|desde)\s+(?:las\s+)?(\d{1,2})[:.](\d{2})\s+(?:a|hasta)\s+(?:las\s+)?(\d{1,2})[:.](\d{2})/i;
+    const deAMatch = commentVal.match(deAPattern);
+    if (deAMatch) {
+      const entH = deAMatch[1].padStart(2, '0');
+      const entM = deAMatch[2];
+      const salH = deAMatch[3].padStart(2, '0');
+      const salM = deAMatch[4];
+      formEntTime.value = `${entH}:${entM}`;
+      formSalTime.value = `${salH}:${salM}`;
+      formCustomHours.checked = true;
+      formHoursContainer.style.display = 'grid';
+      return;
+    }
+
+    // 2. Check for "hasta las HH:MM"
+    const hastaPattern = /(?:hasta las|hasta)\s+(\d{1,2})[:.](\d{2})/i;
+    const hastaMatch = commentVal.match(hastaPattern);
+    if (hastaMatch) {
+      const salH = hastaMatch[1].padStart(2, '0');
+      const salM = hastaMatch[2];
+      formSalTime.value = `${salH}:${salM}`;
+      formCustomHours.checked = true;
+      formHoursContainer.style.display = 'grid';
+      return;
+    }
+
+    // 3. Check for "de HH a HH"
+    const deAHourPattern = /(?:de|desde)\s+(?:las\s+)?(\d{1,2})\s+(?:a|hasta)\s+(?:las\s+)?(\d{1,2})/i;
+    const deAHourMatch = commentVal.match(deAHourPattern);
+    if (deAHourMatch) {
+      const entH = deAHourMatch[1].padStart(2, '0');
+      const salH = deAHourMatch[2].padStart(2, '0');
+      formEntTime.value = `${entH}:00`;
+      formSalTime.value = `${salH}:00`;
+      formCustomHours.checked = true;
+      formHoursContainer.style.display = 'grid';
+      return;
+    }
+
+    // 4. Check for "hasta las HH"
+    const hastaHourPattern = /(?:hasta las|hasta)\s+(\d{1,2})(?!\d)/i;
+    const hastaHourMatch = commentVal.match(hastaHourPattern);
+    if (hastaHourMatch) {
+      const salH = hastaHourMatch[1].padStart(2, '0');
+      formSalTime.value = `${salH}:00`;
+      formCustomHours.checked = true;
+      formHoursContainer.style.display = 'grid';
+      return;
+    }
+  }
+
   function loadFormDayData() {
     const idx = parseInt(formDaySelect.value);
     if (isNaN(idx) || !daysData[idx]) return;
     
     const day = daysData[idx];
     
-    for (let s = 0; s < 8; s++) {
-      formTimeInputs[s].value = day.shifts[s] || '';
+    // 1. Separate ticket from comment/motive
+    let ticketVal = "";
+    let motiveVal = day.comment || "";
+    
+    // Match pattern: "Ticket 12345 - reason..." or "Tkt 12345: reason..."
+    const ticketPattern = /^(?:Ticket|Tkt)\s*#?([a-zA-Z0-9_-]+)\s*[:-]\s*(.*)$/i;
+    const ticketMatch = motiveVal.match(ticketPattern);
+    if (ticketMatch) {
+      ticketVal = ticketMatch[1];
+      motiveVal = ticketMatch[2];
     }
     
-    formComment.value = day.comment || '';
+    formTicket.value = ticketVal;
+    formComment.value = motiveVal;
     
-    if (day.isFeriado) {
-      formBtnFeriado.textContent = '☀️ Marcar Día Laborable';
-      formBtnFeriado.className = 'btn btn-primary';
+    // 2. Set Feriado checkbox
+    formIsFeriado.checked = !!day.isFeriado;
+    
+    // 3. Set De Corrido checkbox
+    let deCorrido = false;
+    let entVal = "";
+    let salVal = "";
+    let hasCustomHours = false;
+    
+    const stdStart = day.dayOfWeek === 6 ? "10:00" : "09:30";
+    const stdEnd = getStandardEndTime(day.dayOfWeek);
+
+    if (day.dayOfWeek === 0 || day.isFeriado) {
+      // Sunday/Holiday: 1 shift (index 0, 1)
+      entVal = day.shifts[0] || "";
+      salVal = day.shifts[1] || "";
+      deCorrido = true; // Always continuous on rest days
+      
+      // If shifts are filled and don't match empty, it has custom hours
+      if (entVal || salVal) {
+        hasCustomHours = true;
+      }
+    } else if (day.dayOfWeek === 6) {
+      // Saturday: 1 shift (index 0, 1)
+      entVal = day.shifts[0] || "";
+      salVal = day.shifts[1] || "";
+      deCorrido = true;
+      
+      // Check if Saturday hours differ from standard (10:00 - 12:30)
+      if (entVal && salVal) {
+        if (entVal !== "10:00" || salVal !== "12:30") {
+          hasCustomHours = true;
+        }
+      } else if (entVal || salVal) {
+        hasCustomHours = true;
+      }
     } else {
-      formBtnFeriado.textContent = '🎈 Marcar Feriado';
-      formBtnFeriado.className = 'btn btn-secondary';
+      // Weekdays: 2 shifts
+      entVal = day.shifts[0] || "";
+      if (day.shifts[2] === "13:30") {
+        deCorrido = true;
+      }
+      
+      salVal = day.shifts[3] || day.shifts[1] || "";
+      
+      if (entVal && salVal) {
+        if (entVal !== "09:30" || salVal !== stdEnd) {
+          hasCustomHours = true;
+        } else {
+          // If hours are standard, but the middle shifts don't match the deCorrido status
+          if (deCorrido) {
+            if (day.shifts[1] !== "13:30" || day.shifts[2] !== "13:30") {
+              hasCustomHours = true;
+            }
+          } else {
+            if (day.shifts[1] !== "13:30" || day.shifts[2] !== "15:00") {
+              hasCustomHours = true;
+            }
+          }
+        }
+      } else if (entVal || salVal) {
+        hasCustomHours = true;
+      }
     }
+    
+    formDeCorrido.checked = deCorrido;
+    formCustomHours.checked = hasCustomHours;
+    formHoursContainer.style.display = hasCustomHours ? 'grid' : 'none';
+    
+    // Set text input values for hours
+    formEntTime.value = entVal || stdStart;
+    formSalTime.value = salVal || stdEnd;
+  }
+
+  function saveFormDayData() {
+    const dayIdx = parseInt(formDaySelect.value);
+    if (isNaN(dayIdx) || !daysData[dayIdx]) return;
+    
+    const day = daysData[dayIdx];
+    const isFeriado = formIsFeriado.checked;
+    const deCorrido = formDeCorrido.checked;
+    const ticket = formTicket.value.trim();
+    const motivo = formComment.value.trim();
+    const hasCustomHours = formCustomHours.checked;
+    
+    let entVal = formEntTime.value.trim();
+    let salVal = formSalTime.value.trim();
+    
+    // Set Feriado status
+    day.isFeriado = isFeriado;
+    
+    // Combine Ticket and Motivo/Comment
+    let combinedComment = motivo;
+    if (ticket) {
+      combinedComment = `Ticket ${ticket} - ${motivo}`;
+    }
+    day.comment = combinedComment;
+    
+    // Determine default hours if empty
+    const stdStart = day.dayOfWeek === 6 ? "10:00" : "09:30";
+    const stdEnd = getStandardEndTime(day.dayOfWeek);
+    
+    const finalEnt = entVal || stdStart;
+    const finalSal = salVal || stdEnd;
+    
+    // Write shifts
+    if (isFeriado || day.dayOfWeek === 0) {
+      // Sunday/Holiday: 1 shift (index 0, 1)
+      if (hasCustomHours || motivo || ticket) {
+        day.shifts = [finalEnt, finalSal, "", "", "", "", "", ""];
+      } else {
+        day.shifts = ["", "", "", "", "", "", "", ""];
+      }
+    } else if (day.dayOfWeek === 6) {
+      // Saturday: 1 shift (index 0, 1)
+      if (hasCustomHours || motivo || ticket) {
+        day.shifts = [finalEnt, finalSal, "", "", "", "", "", ""];
+      } else {
+        day.shifts = ["", "", "", "", "", "", "", ""];
+      }
+    } else {
+      // Weekdays: 2 shifts
+      // Even if there is no custom hours or motive, weekdays should retain their standard hours
+      // so they are calculated correctly as normal hours.
+      // But wait! If we want to allow users to completely clear a weekday, they can do so.
+      // However, by default, standard days are filled with shifts.
+      // Let's populate shifts if they are filled or if it's standard.
+      // If shifts are empty and we didn't customize/motivo, we can either keep them empty or fill standard.
+      // In our code, loadMockOrEmpty fills empty weekdays with standard hours, which is good.
+      // If we save, let's keep the standard shifts:
+      if (deCorrido) {
+        day.shifts = [finalEnt, "13:30", "13:30", finalSal, "", "", "", ""];
+      } else {
+        day.shifts = [finalEnt, "13:30", "15:00", finalSal, "", "", "", ""];
+      }
+    }
+    
+    saveData();
+    updateTotalsAndLabels();
   }
 
   function updateTotalsAndLabels() {

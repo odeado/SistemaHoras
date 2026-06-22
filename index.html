@@ -116,12 +116,15 @@
     <main class="main-panel">
       <header class="panel-header">
         <h1>Convenio y Control de Horas Extraordinarias</h1>
-        <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
           <div id="sync-status" class="sync-indicator offline" title="Estado de sincronización con la nube">
             <span class="dot"></span> <span class="label">Conectando...</span>
           </div>
           <button id="theme-toggle" class="theme-toggle-btn" title="Cambiar Tema">
             🌙
+          </button>
+          <button id="sidebar-toggle" class="theme-toggle-btn" title="Configuración" style="font-size: 1.1rem; line-height: 1;">
+            ⚙️
           </button>
         </div>
       </header>
@@ -159,93 +162,66 @@
       <!-- Tab 1: Form Content Panel -->
       <div id="panel-form-content" class="tab-panel active">
         <div class="card" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem;">
-          <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
-            <div class="form-group" style="flex: 1; min-width: 200px;">
-              <label for="form-day-select">Seleccionar Día del Período</label>
-              <select id="form-day-select">
-                <!-- Dynamically populated options -->
-              </select>
-            </div>
-            <div class="form-group" style="justify-content: flex-end; padding-top: 1.2rem;">
-              <button id="form-btn-feriado" class="btn btn-secondary" style="font-size: 0.85rem; height: 38px;">
-                🎈 Marcar Feriado
-              </button>
-            </div>
-          </div>
-
-          <!-- Shifts grid inside form -->
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;">
-            <div class="form-group card" style="background-color: var(--saturday-bg); padding: 0.75rem; gap: 0.5rem;">
-              <label style="font-weight: 700; color: var(--primary-color);">1ª Jornada (Turno 1)</label>
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
-                <div>
-                  <label style="font-size: 0.65rem;">Entrada</label>
-                  <input type="text" id="form-ent-1" class="form-input form-time-input" placeholder="--:--" maxlength="5">
-                </div>
-                <div>
-                  <label style="font-size: 0.65rem;">Salida</label>
-                  <input type="text" id="form-sal-1" class="form-input form-time-input" placeholder="--:--" maxlength="5">
-                </div>
-              </div>
-            </div>
-
-            <div class="form-group card" style="background-color: var(--saturday-bg); padding: 0.75rem; gap: 0.5rem;">
-              <label style="font-weight: 700; color: var(--primary-color);">2ª Jornada (Turno 2)</label>
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
-                <div>
-                  <label style="font-size: 0.65rem;">Entrada</label>
-                  <input type="text" id="form-ent-2" class="form-input form-time-input" placeholder="--:--" maxlength="5">
-                </div>
-                <div>
-                  <label style="font-size: 0.65rem;">Salida</label>
-                  <input type="text" id="form-sal-2" class="form-input form-time-input" placeholder="--:--" maxlength="5">
-                </div>
-              </div>
-            </div>
-
-            <div class="form-group card" style="background-color: var(--saturday-bg); padding: 0.75rem; gap: 0.5rem;">
-              <label style="font-weight: 700; color: var(--primary-color);">3ª Jornada (Turno 3)</label>
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
-                <div>
-                  <label style="font-size: 0.65rem;">Entrada</label>
-                  <input type="text" id="form-ent-3" class="form-input form-time-input" placeholder="--:--" maxlength="5">
-                </div>
-                <div>
-                  <label style="font-size: 0.65rem;">Salida</label>
-                  <input type="text" id="form-sal-3" class="form-input form-time-input" placeholder="--:--" maxlength="5">
-                </div>
-              </div>
-            </div>
-
-            <div class="form-group card" style="background-color: var(--saturday-bg); padding: 0.75rem; gap: 0.5rem;">
-              <label style="font-weight: 700; color: var(--primary-color);">4ª Jornada (Turno 4)</label>
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
-                <div>
-                  <label style="font-size: 0.65rem;">Entrada</label>
-                  <input type="text" id="form-ent-4" class="form-input form-time-input" placeholder="--:--" maxlength="5">
-                </div>
-                <div>
-                  <label style="font-size: 0.65rem;">Salida</label>
-                  <input type="text" id="form-sal-4" class="form-input form-time-input" placeholder="--:--" maxlength="5">
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Comment inside form -->
+          
           <div class="form-group">
-            <label for="form-comment">Motivo de Horas Extraordinarias (Comentario)</label>
-            <input type="text" id="form-comment" class="form-input" placeholder="Ej. asistiendo usuarios conexión casa, hasta las 21:20">
+            <label for="form-day-select">Seleccionar Día del Período</label>
+            <select id="form-day-select">
+              <!-- Dynamically populated options -->
+            </select>
           </div>
 
-          <div style="display: flex; gap: 1rem; align-items: center; margin-top: 0.5rem;">
-            <button id="form-btn-save-next" class="btn btn-primary" style="flex: 1;">
+          <!-- Toggles -->
+          <div style="display: flex; gap: 1.5rem; align-items: center; flex-wrap: wrap; margin-bottom: -0.25rem;">
+            <div class="checkbox-group">
+              <input type="checkbox" id="form-is-feriado">
+              <label for="form-is-feriado" style="font-weight: 700; cursor: pointer;">🎈 Marcar como Día Feriado</label>
+            </div>
+            
+            <div class="checkbox-group" id="form-de-corrido-wrapper">
+              <input type="checkbox" id="form-de-corrido">
+              <label for="form-de-corrido" style="font-weight: 700; cursor: pointer;">🔄 Jornada de Corrido (sin colación)</label>
+            </div>
+
+            <div class="checkbox-group">
+              <input type="checkbox" id="form-custom-hours">
+              <label for="form-custom-hours" style="font-weight: 700; cursor: pointer;">⏰ Personalizar Horas</label>
+            </div>
+          </div>
+
+          <!-- Entrance / Exit Inputs (Toggleable) -->
+          <div id="form-hours-container" style="display: none; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+              <label for="form-ent-time" style="font-weight: 700;">Hora Entrada</label>
+              <input type="text" id="form-ent-time" class="form-input form-time-input" placeholder="09:30" maxlength="5">
+            </div>
+            <div class="form-group">
+              <label for="form-sal-time" style="font-weight: 700;">Hora Salida</label>
+              <input type="text" id="form-sal-time" class="form-input form-time-input" placeholder="19:00" maxlength="5">
+            </div>
+          </div>
+
+          <!-- Ticket & Comment Grid -->
+          <div style="display: grid; grid-template-columns: 120px 1fr; gap: 1rem;">
+            <div class="form-group">
+              <label for="form-ticket" style="font-weight: 700;">Ticket</label>
+              <input type="text" id="form-ticket" class="form-input" placeholder="Ej. 12345" maxlength="15">
+            </div>
+            <div class="form-group">
+              <label for="form-comment" style="font-weight: 700;">Motivo de Horas Extraordinarias (Comentario)</label>
+              <input type="text" id="form-comment" class="form-input" placeholder="Ej. asistiendo usuarios por corte de luz, hasta las 20:30">
+            </div>
+          </div>
+
+          <!-- Buttons -->
+          <div style="display: flex; gap: 1rem; align-items: center; margin-top: 0.5rem; flex-wrap: wrap;">
+            <button id="form-btn-save-next" class="btn btn-primary" style="flex: 2; min-width: 150px;">
               Guardar y Siguiente Día →
             </button>
-            <button id="form-btn-clear" class="btn btn-secondary">
+            <button id="form-btn-clear" class="btn btn-secondary" style="flex: 1; min-width: 100px;">
               Limpiar Día
             </button>
           </div>
+
         </div>
       </div>
 
@@ -327,6 +303,7 @@
     </main>
   </div>
 
+  <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
   <script src="app.js"></script>
 </body>
 </html>
