@@ -260,16 +260,31 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function generateEmptyDays(dates) {
-    daysData = dates.map(d => ({
-      dateKey: d.dateKey,
-      dayNum: d.dayNum,
-      dayName: d.dayName,
-      dayOfWeek: d.dayOfWeek,
-      dateObj: d.dateObj,
-      isFeriado: false,
-      comment: '',
-      shifts: ['', '', '', '', '', '', '', ''] // 4 entry/exit pairs
-    }));
+    daysData = dates.map(d => {
+      const dayOfWeek = d.dayOfWeek;
+      let shifts = ['', '', '', '', '', '', '', ''];
+      
+      if (dayOfWeek !== 0) { // Not Sunday
+        const start = getStandardStartTime(dayOfWeek);
+        const end = getStandardEndTime(dayOfWeek);
+        if (dayOfWeek === 6) {
+          shifts = [start, end, '', '', '', '', '', ''];
+        } else {
+          shifts = [start, '13:30', '15:00', end, '', '', '', ''];
+        }
+      }
+      
+      return {
+        dateKey: d.dateKey,
+        dayNum: d.dayNum,
+        dayName: d.dayName,
+        dayOfWeek: dayOfWeek,
+        dateObj: d.dateObj,
+        isFeriado: false,
+        comment: '',
+        shifts: shifts
+      };
+    });
   }
 
   function saveData() {
@@ -349,10 +364,16 @@ document.addEventListener('DOMContentLoaded', () => {
             shifts: matched ? matched.shifts : ['', '', '', '', '', '', '', '']
           };
         });
+        const isFormFocused = document.activeElement && 
+                              (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'SELECT') && 
+                              document.activeElement.id.startsWith('form-');
+        
         saveLocalOnly();
         renderTable();
         populateFormDaySelect();
-        loadFormDayData();
+        if (!isFormFocused) {
+          loadFormDayData();
+        }
         setSyncState('online');
       } else {
         // Cloud is empty for this period. Check if we have local storage data first
@@ -469,49 +490,44 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- Form View Handlers ---
   function setupFormEventListeners() {
-    // Tab switching
-    tabFormBtn.addEventListener('click', () => {
-      tabFormBtn.classList.add('active');
-      tabTableBtn.classList.remove('active');
-      panelFormContent.classList.add('active');
-      panelTableContent.classList.remove('active');
-    });
-    
-    tabTableBtn.addEventListener('click', () => {
-      tabTableBtn.classList.add('active');
-      tabFormBtn.classList.remove('active');
-      panelTableContent.classList.add('active');
-      panelFormContent.classList.remove('active');
-      renderTable(); // Force re-render table to display updates
-    });
-
     // Dropdown change
     formDaySelect.addEventListener('change', loadFormDayData);
-
+ 
     // Sidebar Mobile Toggle
     if (sidebarToggle && sidebar && sidebarBackdrop) {
       sidebarToggle.addEventListener('click', () => {
         sidebar.classList.toggle('show');
         sidebarBackdrop.classList.toggle('show');
       });
-
+ 
       sidebarBackdrop.addEventListener('click', () => {
         sidebar.classList.remove('show');
         sidebarBackdrop.classList.remove('show');
       });
     }
-
+ 
     // Toggle custom hours visibility
     formCustomHours.addEventListener('change', () => {
       formHoursContainer.style.display = formCustomHours.checked ? 'grid' : 'none';
       saveFormDayData();
     });
-
-    // Time input auto-formatting while typing
-    formEntTime.addEventListener('input', formatTimeInput);
-    formSalTime.addEventListener('input', formatTimeInput);
-
-    // Save form data when fields change
+ 
+    // Time input auto-formatting while typing and local real-time updating
+    [formEntTime, formSalTime].forEach(input => {
+      input.addEventListener('input', (e) => {
+        formatTimeInput(e);
+        const val = input.value.trim();
+        // If a valid time is fully typed (length 5), update locally in real-time
+        if (val.length === 5) {
+          const regex = /^([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$/;
+          if (regex.test(val)) {
+            saveFormDayDataLocal();
+          }
+        }
+      });
+    });
+ 
+    // Save form data when fields change (blur/exit)
     [formEntTime, formSalTime, formTicket, formComment, formIsFeriado, formDeCorrido].forEach(input => {
       input.addEventListener('change', () => {
         // Validate time format if it's a time input
@@ -531,16 +547,21 @@ document.addEventListener('DOMContentLoaded', () => {
             }
           }
         }
-        saveFormDayData();
+        saveFormDayData(); // Writes to Firebase
       });
     });
-
-    // Auto-parse times from motive/comment in real time
+ 
+    // Auto-parse times from motive/comment in real time, updating locally
     formComment.addEventListener('input', () => {
       parseTimesFromComment();
-      saveFormDayData();
+      saveFormDayDataLocal(); // Local real-time update
     });
-
+ 
+    // Also update locally when ticket changes in real-time
+    formTicket.addEventListener('input', () => {
+      saveFormDayDataLocal(); // Local real-time update
+    });
+ 
     // Clear day in form
     formBtnClear.addEventListener('click', () => {
       const dayIdx = parseInt(formDaySelect.value);
@@ -555,13 +576,13 @@ document.addEventListener('DOMContentLoaded', () => {
         showStatus("Día limpiado", "success");
       }
     });
-
+ 
     // Save and Next Day
     formBtnSaveNext.addEventListener('click', () => {
       const dayIdx = parseInt(formDaySelect.value);
       if (isNaN(dayIdx)) return;
       
-      saveFormDayData(); // Ensure saved
+      saveFormDayData(); // Ensure saved to Firebase
       
       // Advance dropdown
       if (dayIdx < daysData.length - 1) {
@@ -599,6 +620,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  function getStandardStartTime(dayOfWeek) {
+    switch (dayOfWeek) {
+      case 6: return "10:00"; // sábado
+      default: return "09:30"; // lunes a viernes, domingo
+    }
+  }
+
   function getStandardEndTime(dayOfWeek) {
     switch (dayOfWeek) {
       case 1: return "19:30"; // lunes
@@ -611,9 +639,30 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  function resetDayToDefault(day) {
+    day.comment = '';
+    day.isFeriado = false;
+    let shifts = ['', '', '', '', '', '', '', ''];
+    if (day.dayOfWeek !== 0) {
+      const start = getStandardStartTime(day.dayOfWeek);
+      const end = getStandardEndTime(day.dayOfWeek);
+      if (day.dayOfWeek === 6) {
+        shifts = [start, end, '', '', '', '', '', ''];
+      } else {
+        shifts = [start, '13:30', '15:00', end, '', '', '', ''];
+      }
+    }
+    day.shifts = shifts;
+  }
+
   function parseTimesFromComment() {
     const commentVal = formComment.value.trim();
     if (!commentVal) return;
+
+    // 0. Detect continuous work (de corrido)
+    if (/de corrido|sin colaci[oó]n|trabajo continuo/i.test(commentVal)) {
+      formDeCorrido.checked = true;
+    }
 
     // 1. Check for "de HH:MM a HH:MM"
     const deAPattern = /(?:de|desde)\s+(?:las\s+)?(\d{1,2})[:.](\d{2})\s+(?:a|hasta)\s+(?:las\s+)?(\d{1,2})[:.](\d{2})/i;
@@ -637,8 +686,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const salH = hastaMatch[1].padStart(2, '0');
       const salM = hastaMatch[2];
       formSalTime.value = `${salH}:${salM}`;
-      formCustomHours.checked = true;
-      formHoursContainer.style.display = 'grid';
       return;
     }
 
@@ -661,8 +708,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (hastaHourMatch) {
       const salH = hastaHourMatch[1].padStart(2, '0');
       formSalTime.value = `${salH}:00`;
-      formCustomHours.checked = true;
-      formHoursContainer.style.display = 'grid';
       return;
     }
   }
@@ -697,7 +742,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let salVal = "";
     let hasCustomHours = false;
     
-    const stdStart = day.dayOfWeek === 6 ? "10:00" : "09:30";
+    const stdStart = getStandardStartTime(day.dayOfWeek);
     const stdEnd = getStandardEndTime(day.dayOfWeek);
 
     if (day.dayOfWeek === 0 || day.isFeriado) {
@@ -705,52 +750,25 @@ document.addEventListener('DOMContentLoaded', () => {
       entVal = day.shifts[0] || "";
       salVal = day.shifts[1] || "";
       deCorrido = true; // Always continuous on rest days
-      
-      // If shifts are filled and don't match empty, it has custom hours
-      if (entVal || salVal) {
-        hasCustomHours = true;
-      }
     } else if (day.dayOfWeek === 6) {
       // Saturday: 1 shift (index 0, 1)
       entVal = day.shifts[0] || "";
       salVal = day.shifts[1] || "";
       deCorrido = true;
-      
-      // Check if Saturday hours differ from standard (10:00 - 12:30)
-      if (entVal && salVal) {
-        if (entVal !== "10:00" || salVal !== "12:30") {
-          hasCustomHours = true;
-        }
-      } else if (entVal || salVal) {
-        hasCustomHours = true;
-      }
     } else {
       // Weekdays: 2 shifts
       entVal = day.shifts[0] || "";
       if (day.shifts[2] === "13:30") {
         deCorrido = true;
       }
-      
       salVal = day.shifts[3] || day.shifts[1] || "";
-      
-      if (entVal && salVal) {
-        if (entVal !== "09:30" || salVal !== stdEnd) {
-          hasCustomHours = true;
-        } else {
-          // If hours are standard, but the middle shifts don't match the deCorrido status
-          if (deCorrido) {
-            if (day.shifts[1] !== "13:30" || day.shifts[2] !== "13:30") {
-              hasCustomHours = true;
-            }
-          } else {
-            if (day.shifts[1] !== "13:30" || day.shifts[2] !== "15:00") {
-              hasCustomHours = true;
-            }
-          }
-        }
-      } else if (entVal || salVal) {
-        hasCustomHours = true;
-      }
+    }
+    
+    // Custom hours refers ONLY to custom entrance time
+    if (day.dayOfWeek === 0 || day.isFeriado) {
+      hasCustomHours = (entVal !== "");
+    } else {
+      hasCustomHours = (entVal !== "" && entVal !== stdStart);
     }
     
     formDeCorrido.checked = deCorrido;
@@ -762,7 +780,7 @@ document.addEventListener('DOMContentLoaded', () => {
     formSalTime.value = salVal || stdEnd;
   }
 
-  function saveFormDayData() {
+  function saveFormDayDataLocal() {
     const dayIdx = parseInt(formDaySelect.value);
     if (isNaN(dayIdx) || !daysData[dayIdx]) return;
     
@@ -776,48 +794,33 @@ document.addEventListener('DOMContentLoaded', () => {
     let entVal = formEntTime.value.trim();
     let salVal = formSalTime.value.trim();
     
-    // Set Feriado status
     day.isFeriado = isFeriado;
     
-    // Combine Ticket and Motivo/Comment
     let combinedComment = motivo;
     if (ticket) {
       combinedComment = `Ticket ${ticket} - ${motivo}`;
     }
     day.comment = combinedComment;
     
-    // Determine default hours if empty
-    const stdStart = day.dayOfWeek === 6 ? "10:00" : "09:30";
+    const stdStart = getStandardStartTime(day.dayOfWeek);
     const stdEnd = getStandardEndTime(day.dayOfWeek);
     
-    const finalEnt = entVal || stdStart;
+    const finalEnt = hasCustomHours ? entVal : stdStart;
     const finalSal = salVal || stdEnd;
     
-    // Write shifts
     if (isFeriado || day.dayOfWeek === 0) {
-      // Sunday/Holiday: 1 shift (index 0, 1)
       if (hasCustomHours || motivo || ticket) {
         day.shifts = [finalEnt, finalSal, "", "", "", "", "", ""];
       } else {
         day.shifts = ["", "", "", "", "", "", "", ""];
       }
     } else if (day.dayOfWeek === 6) {
-      // Saturday: 1 shift (index 0, 1)
       if (hasCustomHours || motivo || ticket) {
         day.shifts = [finalEnt, finalSal, "", "", "", "", "", ""];
       } else {
         day.shifts = ["", "", "", "", "", "", "", ""];
       }
     } else {
-      // Weekdays: 2 shifts
-      // Even if there is no custom hours or motive, weekdays should retain their standard hours
-      // so they are calculated correctly as normal hours.
-      // But wait! If we want to allow users to completely clear a weekday, they can do so.
-      // However, by default, standard days are filled with shifts.
-      // Let's populate shifts if they are filled or if it's standard.
-      // If shifts are empty and we didn't customize/motivo, we can either keep them empty or fill standard.
-      // In our code, loadMockOrEmpty fills empty weekdays with standard hours, which is good.
-      // If we save, let's keep the standard shifts:
       if (deCorrido) {
         day.shifts = [finalEnt, "13:30", "13:30", finalSal, "", "", "", ""];
       } else {
@@ -825,8 +828,22 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
     
-    saveData();
-    updateTotalsAndLabels();
+    saveLocalOnly();
+    renderTable();
+    
+    // Update current option label in select dropdown
+    const opt = formDaySelect.options[dayIdx];
+    if (opt) {
+      const calc = calculateDayHours(day);
+      let workedStr = calc.hasHours ? ` (${calc.timeStr} hrs)` : '';
+      if (day.isFeriado) workedStr += ' [Feriado]';
+      opt.textContent = `${day.dayNum} - ${day.dayName}${workedStr}`;
+    }
+  }
+
+  function saveFormDayData() {
+    saveFormDayDataLocal();
+    saveToFirebaseOnly();
   }
 
   function updateTotalsAndLabels() {
@@ -1906,28 +1923,28 @@ document.addEventListener('DOMContentLoaded', () => {
         { dateKey: "2026-04-17", shifts: ['09:30', '13:30', '15:00', '19:00', '', '', '', ''], comment: "" },
         { dateKey: "2026-04-18", shifts: ['10:00', '15:20', '', '', '', '', '', ''], comment: "hasta las 15:20 asistiendo macrena saavedra problema conexión casa" },
         { dateKey: "2026-04-19", shifts: ['09:30', '15:30', '', '', '', '', '', ''], comment: "asistiendo de las 9:30 a los usuarios de rendic problema de conexión, hasta las 15:30" },
-        { dateKey: "2026-04-20", shifts: ['09:30', '13:30', '15:00', '19:00', '', '', '', ''], comment: "" },
+        { dateKey: "2026-04-20", shifts: ['09:30', '13:30', '15:00', '19:30', '', '', '', ''], comment: "" },
         { dateKey: "2026-04-21", shifts: ['09:30', '13:30', '15:00', '21:20', '', '', '', ''], comment: "asistiendo usuario denizard gallardo conexión casa, hasta las 21:20 luego marcelo cruz, cambio de ips" },
         { dateKey: "2026-04-22", shifts: ['09:30', '13:30', '15:00', '18:30', '', '', '', ''], comment: "" },
         { dateKey: "2026-04-23", shifts: ['09:30', '13:30', '13:30', '20:30', '', '', '', ''], comment: "de corrido asistiendo instalacion matta, conexión salon, luego hasta las 20:30 asistiendo alejandro ahumada proeblema coenxion milenium" },
         { dateKey: "2026-04-24", shifts: ['09:30', '13:30', '15:00', '19:00', '', '', '', ''], comment: "" },
         { dateKey: "2026-04-25", shifts: ['10:00', '12:30', '', '', '', '', '', ''], comment: "" },
         { dateKey: "2026-04-26", shifts: ['', '', '', '', '', '', '', ''], comment: "" },
-        { dateKey: "2026-04-27", shifts: ['09:00', '13:30', '15:00', '19:00', '', '', '', ''], comment: "" },
+        { dateKey: "2026-04-27", shifts: ['09:30', '13:30', '15:00', '19:30', '', '', '', ''], comment: "" },
         { dateKey: "2026-04-28", shifts: ['09:30', '13:30', '15:00', '18:30', '', '', '', ''], comment: "" },
         { dateKey: "2026-04-29", shifts: ['09:30', '13:30', '15:00', '18:30', '', '', '', ''], comment: "" },
         { dateKey: "2026-04-30", shifts: ['09:30', '13:30', '15:00', '19:00', '', '', '', ''], comment: "" },
         { dateKey: "2026-05-01", shifts: ['09:30', '13:30', '15:00', '19:00', '', '', '', ''], comment: "" },
         { dateKey: "2026-05-02", shifts: ['10:00', '12:30', '', '', '', '', '', ''], comment: "" },
         { dateKey: "2026-05-03", shifts: ['', '', '', '', '', '', '', ''], comment: "" },
-        { dateKey: "2026-05-04", shifts: ['09:00', '13:30', '15:00', '19:00', '', '', '', ''], comment: "" },
+        { dateKey: "2026-05-04", shifts: ['09:30', '13:30', '15:00', '19:30', '', '', '', ''], comment: "" },
         { dateKey: "2026-05-05", shifts: ['09:30', '13:30', '15:00', '21:10', '', '', '', ''], comment: "hasta las 21:10 asistiendo denizard gallardo probelma equipo arica, valpo" },
         { dateKey: "2026-05-06", shifts: ['09:30', '13:30', '15:00', '18:30', '', '', '', ''], comment: "" },
         { dateKey: "2026-05-07", shifts: ['09:30', '13:30', '15:00', '20:10', '', '', '', ''], comment: "hasta las 20:10 asistiendo eduardo campos, luego alejandro ahumada probelma conecion milenium rendic" },
         { dateKey: "2026-05-08", shifts: ['09:30', '13:30', '15:00', '19:00', '', '', '', ''], comment: "" },
         { dateKey: "2026-05-09", shifts: ['10:00', '12:30', '', '', '', '', '', ''], comment: "" },
         { dateKey: "2026-05-10", shifts: ['15:20', '17:20', '', '', '', '', '', ''], comment: "hasta las 17:20 asistiendo usuarios corte electrico rendic" },
-        { dateKey: "2026-05-11", shifts: ['09:30', '13:30', '15:00', '19:00', '', '', '', ''], comment: "" },
+        { dateKey: "2026-05-11", shifts: ['09:30', '13:30', '15:00', '19:30', '', '', '', ''], comment: "" },
         { dateKey: "2026-05-12", shifts: ['09:30', '13:30', '15:00', '18:30', '', '', '', ''], comment: "" },
         { dateKey: "2026-05-13", shifts: ['09:30', '13:30', '15:00', '18:30', '', '', '', ''], comment: "" },
         { dateKey: "2026-05-14", shifts: ['09:30', '13:30', '15:00', '19:00', '', '', '', ''], comment: "" },

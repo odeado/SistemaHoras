@@ -360,7 +360,7 @@ body {
 
 /* Spreadsheet Table Styling */
 .table-container {
-  overflow-x: auto;
+  overflow: auto;
   border-radius: 0.75rem;
   border: 1px solid var(--border-color);
   max-height: 600px;
@@ -625,49 +625,16 @@ tr.rest-day-worked .btn-toggle-feriado:hover {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Tabs Styling */
-.tabs-container {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 0.5rem;
-  border-bottom: 2px solid var(--border-color);
-  padding-bottom: 0.25rem;
-  flex-wrap: wrap;
-}
-
-.tab-btn {
-  font-family: inherit;
-  font-size: 0.9rem;
-  font-weight: 600;
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem 0.5rem 0 0;
-  border: 1px solid transparent;
-  background: transparent;
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  margin-bottom: -4px;
-}
-
-.tab-btn:hover {
-  color: var(--text-color);
-  background-color: var(--saturday-bg);
-}
-
-.tab-btn.active {
-  color: var(--primary-color);
-  background-color: var(--card-bg);
-  border-color: var(--border-color) var(--border-color) transparent var(--border-color);
-  border-bottom: 3px solid var(--primary-color);
-}
-
-.tab-panel {
-  display: none;
-  animation: fadeIn 0.25s ease;
-}
-
-.tab-panel.active {
+/* Layout Sections */
+.form-panel-section {
   display: block;
+  animation: fadeIn 0.25s ease;
+  margin-bottom: 1.5rem;
+}
+
+.table-panel-section {
+  display: block;
+  animation: fadeIn 0.25s ease;
 }
 
 /* Form inputs formatting for mobile view */
@@ -799,20 +766,6 @@ tr.rest-day-worked .btn-toggle-feriado:hover {
 
   .total-card .value {
     font-size: 1.25rem;
-  }
-
-  /* Tabs layout: fill-width tabs for better tapping */
-  .tabs-container {
-    gap: 0.25rem;
-    margin-bottom: 0.75rem;
-  }
-
-  .tab-btn {
-    flex: 1;
-    text-align: center;
-    padding: 0.6rem 0.25rem;
-    font-size: 0.8rem;
-    white-space: nowrap;
   }
 
   /* Form layouts: stack components vertically on mobile */
