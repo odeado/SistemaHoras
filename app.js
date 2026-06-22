@@ -1040,6 +1040,18 @@ document.addEventListener('DOMContentLoaded', () => {
       // Weekly summary for this row
       const summary = weeklySummaries[rIdx];
 
+      // Format shifts for mobile view
+      let horarioText = "";
+      const activeShifts = [];
+      for (let s = 0; s < 8; s += 2) {
+        const ent = day.shifts[s];
+        const sal = day.shifts[s + 1];
+        if (ent && sal) {
+          activeShifts.push(`${ent}→${sal}`);
+        }
+      }
+      horarioText = activeShifts.length > 0 ? activeShifts.join(" ") : "-";
+
       // Determine Row CSS class
       let rowClass = 'day-row';
       if (isSunday || isFeriado) {
@@ -1060,6 +1072,7 @@ document.addEventListener('DOMContentLoaded', () => {
       let html = `
         <td class="center font-bold" style="font-size: 0.85rem;">${day.dayNum}</td>
         <td class="font-medium" style="text-transform: capitalize;">${day.dayName}</td>
+        <td class="center col-horario-mobile" style="display: none; font-size: 0.75rem; white-space: nowrap;">${horarioText}</td>
       `;
 
       // Shifts Inputs (1ª to 4ª Ent/Sal)
@@ -1080,9 +1093,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Calculations Columns (K, L, M, N)
       html += `
-        <td class="center font-semibold" style="background-color: rgba(0,0,0,0.01);">${calc.timeStr}</td>
-        <td class="center" style="background-color: rgba(0,0,0,0.01);">${calc.h || ""}</td>
-        <td class="center" style="background-color: rgba(0,0,0,0.01);">${calc.hasHours ? calc.minDec.toFixed(2) : ""}</td>
+        <td class="center font-semibold col-calc-details" style="background-color: rgba(0,0,0,0.01);">${calc.timeStr}</td>
+        <td class="center col-calc-details" style="background-color: rgba(0,0,0,0.01);">${calc.h || ""}</td>
+        <td class="center col-calc-details" style="background-color: rgba(0,0,0,0.01);">${calc.hasHours ? calc.minDec.toFixed(2) : ""}</td>
         <td class="center font-semibold" style="background-color: rgba(0,0,0,0.02);">${calc.hasHours ? calc.totalDec.toFixed(2) : "0.00"}</td>
       `;
 
@@ -1097,9 +1110,9 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
       } else {
         html += `
-          <td style="background-color: rgba(0,0,0,0.01);"></td>
-          <td style="background-color: rgba(0,0,0,0.01);"></td>
-          <td style="background-color: rgba(0,0,0,0.01);"></td>
+          <td class="col-summary" style="background-color: rgba(0,0,0,0.01);"></td>
+          <td class="col-summary" style="background-color: rgba(0,0,0,0.01);"></td>
+          <td class="col-summary" style="background-color: rgba(0,0,0,0.01);"></td>
         `;
       }
 
@@ -1168,6 +1181,13 @@ document.addEventListener('DOMContentLoaded', () => {
     footSummaryTotal.textContent = totalDecimalHours.toFixed(2); // Since sum of N matches sum of O
     footSummaryNorm.textContent = totalNormalHours.toFixed(2);
     footSummaryExtras.textContent = totalExtraHours.toFixed(2);
+
+    // Adjust footer colspans dynamically for mobile view
+    const isMobile = window.innerWidth <= 768;
+    const footLabel = document.querySelector('tfoot tr td:first-child');
+    if (footLabel) {
+      footLabel.colSpan = isMobile ? 3 : 10;
+    }
 
     // --- Inputs Event Attachment ---
     // Handle time-input keyup, focusout

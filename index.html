@@ -163,11 +163,18 @@
       <div id="panel-form-content" class="tab-panel active">
         <div class="card" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem;">
           
-          <div class="form-group">
-            <label for="form-day-select">Seleccionar Día del Período</label>
-            <select id="form-day-select">
-              <!-- Dynamically populated options -->
-            </select>
+          <!-- Row 1: Day & Exit Time (Hora Final) -->
+          <div class="form-row-2col">
+            <div class="form-group">
+              <label for="form-day-select">Seleccionar Día del Período</label>
+              <select id="form-day-select">
+                <!-- Dynamically populated options -->
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="form-sal-time" style="font-weight: 700;">Hora Final (Salida)</label>
+              <input type="text" id="form-sal-time" class="form-input form-time-input" placeholder="19:00" maxlength="5">
+            </div>
           </div>
 
           <!-- Toggles -->
@@ -184,19 +191,15 @@
 
             <div class="checkbox-group">
               <input type="checkbox" id="form-custom-hours">
-              <label for="form-custom-hours" style="font-weight: 700; cursor: pointer;">⏰ Personalizar Horas</label>
+              <label for="form-custom-hours" style="font-weight: 700; cursor: pointer;">⏰ Personalizar Entrada</label>
             </div>
           </div>
 
-          <!-- Entrance / Exit Inputs (Toggleable) -->
-          <div id="form-hours-container" style="display: none; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <!-- Entrance Input (Toggleable) -->
+          <div id="form-hours-container" style="display: none; margin-bottom: 0.5rem;">
             <div class="form-group">
               <label for="form-ent-time" style="font-weight: 700;">Hora Entrada</label>
               <input type="text" id="form-ent-time" class="form-input form-time-input" placeholder="09:30" maxlength="5">
-            </div>
-            <div class="form-group">
-              <label for="form-sal-time" style="font-weight: 700;">Hora Salida</label>
-              <input type="text" id="form-sal-time" class="form-input form-time-input" placeholder="19:00" maxlength="5">
             </div>
           </div>
 
@@ -233,13 +236,14 @@
               <tr class="header-row-1">
                 <th rowspan="2" style="width: 50px;">DÍA</th>
                 <th rowspan="2" style="width: 100px;">FECHA</th>
-                <th colspan="2">1ª</th>
-                <th colspan="2">2ª</th>
-                <th colspan="2">3ª</th>
-                <th colspan="2">4ª</th>
-                <th rowspan="2" style="width: 75px;">TPO. PERM.</th>
-                <th colspan="3">HORAS PERM.</th>
-                <th colspan="3">N° DE HORAS</th>
+                <th rowspan="2" class="col-horario-mobile" style="display: none; width: 150px;">HORARIO</th>
+                <th colspan="2" class="col-shift">1ª</th>
+                <th colspan="2" class="col-shift">2ª</th>
+                <th colspan="2" class="col-shift">3ª</th>
+                <th colspan="2" class="col-shift">4ª</th>
+                <th rowspan="2" style="width: 75px;" class="col-calc-details">TPO. PERM.</th>
+                <th colspan="3" class="col-calc-details">HORAS PERM.</th>
+                <th colspan="3" class="col-summary">N° DE HORAS</th>
                 <th rowspan="2">MOTIVO DE HORAS EXTRAORDINARIAS</th>
                 <th rowspan="2" style="width: 70px;">ESTADO</th>
               </tr>
@@ -252,12 +256,12 @@
                 <th class="col-shift">SAL.</th>
                 <th class="col-shift">ENT.</th>
                 <th class="col-shift">SAL.</th>
-                <th style="width: 40px;">H</th>
-                <th style="width: 45px;">MIN. DEC.</th>
+                <th style="width: 40px;" class="col-calc-details">H</th>
+                <th style="width: 45px;" class="col-calc-details">MIN. DEC.</th>
                 <th style="width: 55px;">TOTAL DEC.</th>
-                <th style="width: 55px;">Total</th>
-                <th style="width: 55px;">Norm.</th>
-                <th style="width: 55px;">Extras</th>
+                <th style="width: 55px;" class="col-summary">Total</th>
+                <th style="width: 55px;" class="col-summary">Norm.</th>
+                <th style="width: 55px;" class="col-summary">Extras</th>
               </tr>
             </thead>
             <tbody id="payroll-tbody">
@@ -266,13 +270,13 @@
             <tfoot>
               <tr style="background-color: var(--saturday-bg); font-weight: 700;">
                 <td colspan="10" class="center">TOTALES PERÍODO</td>
-                <td id="foot-tpo-perm" class="center">-</td>
-                <td id="foot-horas-h" class="center">-</td>
-                <td id="foot-horas-min" class="center">-</td>
+                <td id="foot-tpo-perm" class="center col-calc-details">-</td>
+                <td id="foot-horas-h" class="center col-calc-details">-</td>
+                <td id="foot-horas-min" class="center col-calc-details">-</td>
                 <td id="foot-horas-total-dec" class="center">0.00</td>
-                <td id="foot-summary-total" class="center">0.00</td>
-                <td id="foot-summary-norm" class="center">0.00</td>
-                <td id="foot-summary-extras" class="center">0.00</td>
+                <td id="foot-summary-total" class="center col-summary">0.00</td>
+                <td id="foot-summary-norm" class="center col-summary">0.00</td>
+                <td id="foot-summary-extras" class="center col-summary">0.00</td>
                 <td colspan="2">
                   <div style="display: flex; gap: 1rem; align-items: center; justify-content: flex-end; font-size: 0.75rem;">
                     <span style="background-color: var(--sunday-free-bg); color: var(--sunday-free-text); padding: 2px 6px; border: 1px solid var(--border-color); border-radius: 3px; font-weight: 700;">
