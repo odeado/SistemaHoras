@@ -735,3 +735,106 @@ tr.rest-day-worked .btn-toggle-feriado:hover {
   50% { transform: scale(1.2); opacity: 0.5; }
   100% { transform: scale(1); opacity: 1; }
 }
+
+/* --- Form Layout Classes (Desktop Default) --- */
+.form-toggles-container {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: -0.25rem;
+}
+
+.form-row-grid {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 1rem;
+}
+
+.form-buttons-container {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* --- High-Fidelity Mobile Adjustments --- */
+@media (max-width: 768px) {
+  body {
+    padding: 0.5rem;
+  }
+
+  .sidebar, .main-panel, .totals-grid, .card {
+    padding: 0.75rem !important;
+    border-radius: 0.75rem !important;
+  }
+
+  .panel-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .panel-header h1 {
+    font-size: 1.2rem;
+    word-break: break-word;
+  }
+
+  /* Totals Grid: 2 columns, primary worked hours spans 2 */
+  .totals-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.5rem !important;
+  }
+
+  .total-card.primary {
+    grid-column: span 2;
+  }
+
+  .total-card .value {
+    font-size: 1.25rem;
+  }
+
+  /* Tabs layout: fill-width tabs for better tapping */
+  .tabs-container {
+    gap: 0.25rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .tab-btn {
+    flex: 1;
+    text-align: center;
+    padding: 0.6rem 0.25rem;
+    font-size: 0.8rem;
+    white-space: nowrap;
+  }
+
+  /* Form layouts: stack components vertically on mobile */
+  .form-toggles-container {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .form-row-grid {
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem;
+  }
+
+  .form-buttons-container {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .form-buttons-container .btn {
+    width: 100%;
+    margin: 0 !important;
+  }
+
+  /* Signature Section */
+  .signature-section {
+    grid-template-columns: 1fr !important;
+    gap: 1.5rem;
+    margin-top: 1rem;
+  }
+}
