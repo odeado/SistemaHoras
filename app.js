@@ -105,7 +105,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const formDeCorrido = document.getElementById('form-de-corrido');
   const formCustomHours = document.getElementById('form-custom-hours');
   const formHoursContainer = document.getElementById('form-hours-container');
-  const formTicket = document.getElementById('form-ticket');
   const formComment = document.getElementById('form-comment');
   const formEntTime = document.getElementById('form-ent-time');
   const formSalTime = document.getElementById('form-sal-time');
@@ -215,6 +214,10 @@ document.addEventListener('DOMContentLoaded', () => {
     currentYear = parseInt(periodYearSelect.value);
     currentMonth = parseInt(periodMonthSelect.value);
     completeWeek = completeWeekCheckbox.checked;
+    
+    // Reset day selector to the first day of the new period
+    formDaySelect.value = "0";
+    
     loadData();
   }
 
@@ -422,10 +425,10 @@ document.addEventListener('DOMContentLoaded', () => {
       saveToFirebaseOnly();
     } else {
       generateEmptyDays(dates);
-      renderTable();
-      populateFormDaySelect();
-      loadFormDayData();
     }
+    renderTable();
+    populateFormDaySelect();
+    loadFormDayData();
   }
 
   function loadLocalStorageBackup(stored, dates) {
@@ -528,7 +531,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
  
     // Save form data when fields change (blur/exit)
-    [formEntTime, formSalTime, formTicket, formComment, formIsFeriado, formDeCorrido].forEach(input => {
+    [formEntTime, formSalTime, formComment, formIsFeriado, formDeCorrido].forEach(input => {
       input.addEventListener('change', () => {
         // Validate time format if it's a time input
         if (input === formEntTime || input === formSalTime) {
@@ -548,17 +551,15 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
         saveFormDayData(); // Writes to Firebase
+        if (input === formIsFeriado) {
+          loadFormDayData();
+        }
       });
     });
  
     // Auto-parse times from motive/comment in real time, updating locally
     formComment.addEventListener('input', () => {
       parseTimesFromComment();
-      saveFormDayDataLocal(); // Local real-time update
-    });
- 
-    // Also update locally when ticket changes in real-time
-    formTicket.addEventListener('input', () => {
       saveFormDayDataLocal(); // Local real-time update
     });
  
@@ -597,6 +598,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function populateFormDaySelect() {
     const selectedVal = formDaySelect.value;
+    
+    // If the dropdown already has the correct number of options, just update the text labels to avoid rebuilding DOM on sync
+    if (formDaySelect.options.length === daysData.length) {
+      daysData.forEach((day, idx) => {
+        const opt = formDaySelect.options[idx];
+        const calc = calculateDayHours(day);
+        let workedStr = calc.hasHours ? ` (${calc.timeStr} hrs)` : '';
+        if (day.isFeriado) workedStr += ' [Feriado]';
+        opt.textContent = `${day.dayNum} - ${day.dayName}${workedStr}`;
+      });
+      return;
+    }
+    
     formDaySelect.innerHTML = '';
     
     daysData.forEach((day, idx) => {
@@ -731,20 +745,8 @@ document.addEventListener('DOMContentLoaded', () => {
       fullDateDisplayEl.textContent = fullDateText;
     }
     
-    // 1. Separate ticket from comment/motive
-    let ticketVal = "";
-    let motiveVal = day.comment || "";
-    
-    // Match pattern: "Ticket 12345 - reason..." or "Tkt 12345: reason..."
-    const ticketPattern = /^(?:Ticket|Tkt)\s*#?([a-zA-Z0-9_-]+)\s*[:-]\s*(.*)$/i;
-    const ticketMatch = motiveVal.match(ticketPattern);
-    if (ticketMatch) {
-      ticketVal = ticketMatch[1];
-      motiveVal = ticketMatch[2];
-    }
-    
-    formTicket.value = ticketVal;
-    formComment.value = motiveVal;
+    // 1. Set comment/motive directly (ticket field is removed)
+    formComment.value = day.comment || "";
     
     // 2. Set Feriado checkbox
     formIsFeriado.checked = !!day.isFeriado;
@@ -807,7 +809,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const day = daysData[dayIdx];
     const isFeriado = formIsFeriado.checked;
     const deCorrido = formDeCorrido.checked;
-    const ticket = formTicket.value.trim();
     const motivo = formComment.value.trim();
     const hasCustomHours = formCustomHours.checked;
     
@@ -815,12 +816,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let salVal = formSalTime.value.trim();
     
     day.isFeriado = isFeriado;
-    
-    let combinedComment = motivo;
-    if (ticket) {
-      combinedComment = `Ticket ${ticket} - ${motivo}`;
-    }
-    day.comment = combinedComment;
+    day.comment = motivo;
     
     const stdStart = getStandardStartTime(day.dayOfWeek);
     const stdEnd = getStandardEndTime(day.dayOfWeek);
@@ -830,14 +826,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const finalSal = salVal || stdEnd;
     
     if (isRestDay) {
-      // Only save shift on Sunday/Holiday if there is actual worked exit time or motive/ticket
-      if (salVal || motivo || ticket) {
+      // Only save shift on Sunday/Holiday if there is actual worked exit time or motive
+      if (salVal || motivo) {
         day.shifts = [finalEnt, finalSal, "", "", "", "", "", ""];
       } else {
         day.shifts = ["", "", "", "", "", "", "", ""];
       }
     } else if (day.dayOfWeek === 6) {
-      if (hasCustomHours || (salVal && salVal !== stdEnd) || motivo || ticket) {
+      if (hasCustomHours || (salVal && salVal !== stdEnd) || motivo) {
         day.shifts = [finalEnt, finalSal, "", "", "", "", "", ""];
       } else {
         day.shifts = [stdStart, stdEnd, "", "", "", "", "", ""];
