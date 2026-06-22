@@ -2,6 +2,23 @@
 // Handles calculations, localStorage, UI updates, and ExcelJS export.
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Purge legacy mock data from client local storage if present
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith("horas_extras_data_")) {
+        const stored = localStorage.getItem(k);
+        if (stored && stored.includes("macrena saavedra")) {
+          localStorage.clear();
+          location.reload();
+          return;
+        }
+      }
+    }
+  } catch (e) {
+    console.error("Storage purge error:", e);
+  }
+
   // --- Firebase Configuration ---
   const firebaseConfig = {
     apiKey: "AIzaSyCKO3c4WitANxhIC5Wc0IjXF8X8mi68nF8",
