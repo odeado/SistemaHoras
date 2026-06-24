@@ -4,9 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
     <title>Registro Horas Extras</title>
-    <!-- Load Firebase SDK (compat version for easy browser load) -->
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -35,10 +32,6 @@
             color: #64748b;
             font-size: 0.8rem;
             margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 6px;
         }
         .card {
             background: white;
@@ -460,41 +453,17 @@
             font-size: 0.55rem;
             font-weight: 600;
         }
-        .sync-badge {
-            background: #e2e8f0;
-            color: #475569;
-            padding: 2px 8px;
-            border-radius: 30px;
-            font-size: 0.65rem;
-            font-weight: 600;
-            display: inline-block;
-        }
-        .sync-badge.online {
-            background: #dcfce7;
-            color: #166534;
-        }
-        .sync-badge.syncing {
-            background: #fef9c3;
-            color: #854d0e;
-        }
-        .sync-badge.offline {
-            background: #fee2e2;
-            color: #b91c1c;
-        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>⏱️ Horas Extras</h1>
-        <p class="sub">
-            <span>Marco — <span id="periodoLabel">16/mayo → 16/junio</span></span>
-            <span id="syncBadge" class="sync-badge">Conectando...</span>
-        </p>
+        <p class="sub">Marco — <span id="periodoLabel">16/mayo → 16/junio</span></p>
 
         <div class="card" style="background:#f8fafc;">
             <div style="font-size:0.7rem; font-weight:600; color:#334155; margin-bottom:4px;">📋 Horario base (42 hrs/semana)</div>
             <div class="tabla-base">
-                <span>Lun</span> 9:30→13:30 · 15:00→19:30 <span>8.5</span> ·
+                <span>Lun</span> 9:00→13:30 · 15:00→19:00 <span>8.5</span> ·
                 <span>Mar</span> 9:30→13:30 · 15:00→18:30 <span>7.5</span> ·
                 <span>Mié</span> 9:30→13:30 · 15:00→18:30 <span>7.5</span> ·
                 <span>Jue</span> 9:30→13:30 · 15:00→19:00 <span>8.0</span> ·
@@ -566,7 +535,7 @@
                     </div>
                 </div>
                 <div style="font-size:0.7rem; color:#854d0e; background:#fef9c3; padding:4px 10px; border-radius:8px; margin-bottom:6px;">
-                    ⚠️ Domingo/Feriado: ingresa entrada y salida manual (sin almuerzo)
+                    ⚠️ Domingo: ingresa entrada y salida manual (sin almuerzo)
                 </div>
             </div>
 
@@ -576,7 +545,7 @@
             </div>
 
             <div style="font-size:0.75rem; color:#475569; background:#f8fafc; padding:6px 10px; border-radius:10px;">
-                <span id="horarioTexto">09:30 → 13:30 · 15:00 → 19:30</span>
+                <span id="horarioTexto">09:30 → 13:30 · 15:00 → 19:00</span>
             </div>
 
             <div class="row mt-1">
@@ -664,37 +633,13 @@
 
     <div id="toast" class="toast"></div>
 
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js">
+    </script>
 
     <script>
-        // ---------- FIREBASE ----------
-        const firebaseConfig = {
-            apiKey: "AIzaSyCKO3c4WitANxhIC5Wc0IjXF8X8mi68nF8",
-            authDomain: "gestion-usuarios-equipos.firebaseapp.com",
-            databaseURL: "https://gestion-usuarios-equipos-default-rtdb.firebaseio.com",
-            projectId: "gestion-usuarios-equipos",
-            storageBucket: "gestion-usuarios-equipos.firebasestorage.app",
-            messagingSenderId: "124302724881",
-            appId: "1:124302724881:web:4a68cac2ae22d7b21c06b0",
-            measurementId: "G-3Q5DRB8DL5"
-        };
-
-        let db = null;
-        let isFirebaseInitialized = false;
-
-        try {
-            if (typeof firebase !== 'undefined') {
-                firebase.initializeApp(firebaseConfig);
-                db = firebase.database();
-                isFirebaseInitialized = true;
-            }
-        } catch (e) {
-            console.error("Firebase init failed:", e);
-        }
-
         // ---------- CONFIG ----------
         const BASE_HORARIOS = {
-            'Lunes': { e1: '09:30', s1: '13:30', e2: '15:00', s2: '19:30', base: 8.5 },
+            'Lunes': { e1: '09:00', s1: '13:30', e2: '15:00', s2: '19:00', base: 8.5 },
             'Martes': { e1: '09:30', s1: '13:30', e2: '15:00', s2: '18:30', base: 7.5 },
             'Miércoles': { e1: '09:30', s1: '13:30', e2: '15:00', s2: '18:30', base: 7.5 },
             'Jueves': { e1: '09:30', s1: '13:30', e2: '15:00', s2: '19:00', base: 8.0 },
@@ -765,20 +710,6 @@
         const sabadoSalida = $('sabadoSalida');
         const rowCorrido = $('rowCorrido');
         const toast = $('toast');
-        const syncBadge = $('syncBadge');
-
-        // ---------- SYNCHRONIZATION BADGE ----------
-        function setSyncState(state) {
-            if (!syncBadge) return;
-            syncBadge.className = `sync-badge ${state}`;
-            if (state === 'online') {
-                syncBadge.textContent = 'Sincronizado';
-            } else if (state === 'syncing') {
-                syncBadge.textContent = 'Sincronizando...';
-            } else {
-                syncBadge.textContent = 'Sin conexión';
-            }
-        }
 
         // ---------- FUNCIONES AUXILIARES ----------
         function timeToMin(t) {
@@ -880,43 +811,19 @@
             return dias;
         }
 
-        // ---------- AUTO-SELECCIÓN DE PERÍODO ----------
-        function getPeriodoForFecha(fechaStr) {
-            if (!fechaStr) return null;
-            const d = new Date(fechaStr + 'T00:00:00');
-            const day = d.getDate();
-            const month = d.getMonth(); // 0-11
-            const year = d.getFullYear();
-            
-            let mesFin, añoFin;
-            if (day > 16) {
-                mesFin = month + 1;
-                añoFin = year;
-                if (mesFin > 11) {
-                    mesFin = 0;
-                    añoFin++;
-                }
-            } else {
-                mesFin = month;
-                añoFin = year;
-            }
-            return { mes: mesFin, año: añoFin };
-        }
-
         // ---------- CÁLCULO DE HORAS ----------
         function calcularHoras(fechaStr, esCorrido, horaFinalStr, esFeriadoFlag, entradaManual, salidaManual, salidaSabado) {
             if (!fechaStr) {
-                return { e1: '09:30', s1: '13:30', e2: '15:00', s2: '19:30', total: 8.5, normales: 8.5, extras: 0,
+                return { e1: '09:30', s1: '13:30', e2: '15:00', s2: '19:00', total: 8, normales: 8, extras: 0,
                     esCorrido: false, esManual: false };
             }
 
             const diaNombre = getDiaSemanaReal(fechaStr);
             const esDom = diaNombre === 'Domingo';
             const esSab = diaNombre === 'Sábado';
-            const esFer = esFeriadoFlag || esFeriadoReal(fechaStr);
 
-            // DOMINGO o FERIADO: manual
-            if (esDom || esFer) {
+            // DOMINGO: manual
+            if (esDom) {
                 const entrada = entradaManual || '';
                 const salida = salidaManual || '';
                 if (!entrada || !salida) {
@@ -993,17 +900,12 @@
 
         function actualizarPreview() {
             const fechaStr = fecha.value;
-            if (!fechaStr) {
-                diaSemana.textContent = '—';
-                return;
-            }
-
+            const esDom = esDomingo(fechaStr);
+            const esSab = esSabado(fechaStr);
             const diaNombre = getDiaSemanaReal(fechaStr);
-            const esDom = diaNombre === 'Domingo';
-            const esSab = diaNombre === 'Sábado';
             const esFer = esFeriado.checked || esFeriadoReal(fechaStr);
 
-            if (esDom || esFer) {
+            if (esDom) {
                 camposManuales.classList.remove('oculto');
                 sabadoFijo.classList.add('oculto');
                 campoHoraFinal.classList.add('oculto');
@@ -1030,11 +932,11 @@
                 sabadoSalida.value
             );
 
-            if (esDom || esFer) {
+            if (esDom) {
                 if (h.e1 && h.s1) {
-                    horarioTexto.textContent = `${h.e1} → ${h.s1} (${esDom ? 'domingo' : 'feriado'} - manual)`;
+                    horarioTexto.textContent = `${h.e1} → ${h.s1} (domingo - manual)`;
                 } else {
-                    horarioTexto.textContent = `${esDom ? 'Domingo' : 'Feriado'} (sin registrar)`;
+                    horarioTexto.textContent = 'Domingo (sin registrar)';
                 }
             } else if (esSab) {
                 horarioTexto.textContent = `${h.e1} → ${h.s1} (sábado)`;
@@ -1050,7 +952,11 @@
             prevNormales.textContent = h.normales.toFixed(1);
             prevExtras.textContent = h.extras.toFixed(1);
 
-            diaSemana.textContent = diaNombre + (esFer ? ' 🔴' : '');
+            if (fechaStr) {
+                diaSemana.textContent = diaNombre + (esFer ? ' 🔴' : '');
+            } else {
+                diaSemana.textContent = '—';
+            }
         }
 
         // ✅ FUNCIÓN GUARDAR
@@ -1127,7 +1033,7 @@
         }
 
         function limpiarFormulario() {
-            fecha.value = new Date().toISOString().split('T')[0];
+            fecha.value = '';
             horaFinal.value = '19:00';
             corrido.checked = false;
             motivo.value = '';
@@ -1135,25 +1041,6 @@
             horaEntradaManual.value = '09:30';
             horaSalidaManual.value = '15:30';
             sabadoSalida.value = '12:30';
-            
-            const period = getPeriodoForFecha(fecha.value);
-            if (period) {
-                const targetVal = `${period.mes}|${period.año}`;
-                let hasOption = false;
-                for (let i = 0; i < selectorMes.options.length; i++) {
-                    if (selectorMes.options[i].value === targetVal) {
-                        hasOption = true;
-                        break;
-                    }
-                }
-                if (hasOption && selectorMes.value !== targetVal) {
-                    selectorMes.value = targetVal;
-                    mesSeleccionado = period.mes;
-                    añoSeleccionado = period.año;
-                    actualizarPeriodoLabels();
-                    renderizar();
-                }
-            }
             actualizarPreview();
         }
 
@@ -1169,7 +1056,6 @@
         function guardarEnLocalStorage() {
             try {
                 localStorage.setItem('horasExtras_registros', JSON.stringify(registros));
-                guardarEnFirebase();
             } catch (e) {
                 console.warn('No se pudo guardar en localStorage:', e);
             }
@@ -1237,7 +1123,7 @@
                     const s = registro.semana || 1;
                     if (semanas[s] !== undefined) semanas[s] += registro.total;
                 } else {
-                    if (esDom || esFer) {
+                    if (esDom) {
                         h = { e1: '', s1: '', e2: '', s2: '', total: 0, normales: 0, extras: 0, esCorrido: false,
                             esManual: true };
                     } else if (esSab) {
@@ -1269,7 +1155,7 @@
                     badge = `<span class="badge-sabado">S</span>`; }
 
                 let horario;
-                if (esDom || esFer) {
+                if (esDom) {
                     horario = h.e1 && h.s1 ? `${h.e1}→${h.s1}` : '—';
                 } else if (esSab) {
                     horario = `${h.e1}→${h.s1}`;
@@ -1343,7 +1229,6 @@
                     const diaNombre = getDiaSemanaReal(fechaStr);
                     const esDom = diaNombre === 'Domingo';
                     const esSab = diaNombre === 'Sábado';
-                    const esFer = esFeriadoReal(fechaStr);
 
                     let registro = registroMap[fechaStr];
                     let h;
@@ -1362,7 +1247,7 @@
                             motivo: registro.motivo || ''
                         };
                     } else {
-                        if (esDom || esFer) {
+                        if (esDom) {
                             h = { e1: '', s1: '', e2: '', s2: '', total: 0, normales: 0, extras: 0,
                                 esCorrido: false, esManual: true, motivo: '' };
                         } else if (esSab) {
@@ -1387,7 +1272,7 @@
 
                     // Formatear horario como en el Excel original
                     let horarioStr;
-                    if (esDom || esFer) {
+                    if (esDom) {
                         horarioStr = h.e1 && h.s1 ? `${h.e1}→${h.s1}` : '';
                     } else if (esSab) {
                         horarioStr = `${h.e1}→${h.s1}`;
@@ -1409,12 +1294,12 @@
                         'DÍA': `${diaNum}${diaNombre.substring(0,3)}`,
                         'ENT.': h.e1 || '',
                         'SAL.': h.s1 || '',
-                        'ENT. ': h.e2 || '',
-                        'SAL. ': h.s2 || '',
-                        'ENT.  ': '',
-                        'SAL.  ': '',
-                        'ENT.   ': '',
-                        'SAL.   ': '',
+                        'ENT.': h.e2 || '',
+                        'SAL.': h.s2 || '',
+                        'ENT.': '',
+                        'SAL.': '',
+                        'ENT.': '',
+                        'SAL.': '',
                         'TPO. PERM.': '',
                         'HORAS PERM.': '',
                         'Total': totalStr,
@@ -1510,10 +1395,7 @@
                 const esActual = (opt.mes === mesActual && opt.año === añoActual);
                 option.textContent = `${MESES[opt.mes]} ${opt.año} ${esActual ? '(Actual)' : ''} (${info.label})`;
                 selectorMes.appendChild(option);
-                
-                // CRITICAL BUG FIX: Default to the LATEST month (which is the current month), 
-                // instead of the oldest one (idx === 0)
-                if (idx === opciones.length - 1) {
+                if (idx === 0) {
                     option.selected = true;
                     mesSeleccionado = opt.mes;
                     añoSeleccionado = opt.año;
@@ -1545,183 +1427,21 @@
             renderizar();
         });
 
-        // Auto-select period when a date is picked
-        fecha.addEventListener('change', function() {
-            const fechaStr = this.value;
-            if (fechaStr) {
-                const period = getPeriodoForFecha(fechaStr);
-                if (period) {
-                    const targetVal = `${period.mes}|${period.año}`;
-                    let hasOption = false;
-                    for (let i = 0; i < selectorMes.options.length; i++) {
-                        if (selectorMes.options[i].value === targetVal) {
-                            hasOption = true;
-                            break;
-                        }
-                    }
-                    
-                    if (hasOption) {
-                        if (selectorMes.value !== targetVal) {
-                            selectorMes.value = targetVal;
-                            mesSeleccionado = period.mes;
-                            añoSeleccionado = period.año;
-                            actualizarPeriodoLabels();
-                            renderizar();
-                        }
-                    } else {
-                        // Dynamically append the option if it is not in the list
-                        const option = document.createElement('option');
-                        const info = getPeriodoInfo(period.mes, period.año);
-                        option.value = targetVal;
-                        option.textContent = `${MESES[period.mes]} ${period.año} (${info.label})`;
-                        selectorMes.appendChild(option);
-                        selectorMes.value = targetVal;
-                        mesSeleccionado = period.mes;
-                        añoSeleccionado = period.año;
-                        actualizarPeriodoLabels();
-                        renderizar();
-                    }
-                }
-                
-                // Prefill form if there's a record already saved for this date
-                const diaNum = obtenerDiaDesdeFecha(fechaStr);
-                const mes = obtenerMesDesdeFecha(fechaStr);
-                const año = obtenerAnioDesdeFecha(fechaStr);
-                const registro = registros.find(r => r.dia === diaNum && r.mes === mes && r.año === año);
-                
-                if (registro) {
-                    esFeriado.checked = !!registro.esFeriado;
-                    corrido.checked = !!registro.esCorrido;
-                    motivo.value = registro.motivo || '';
-                    if (esDomingo(fechaStr) || esFeriado.checked) {
-                        horaEntradaManual.value = registro.entradaManual || '09:30';
-                        horaSalidaManual.value = registro.salidaManual || '15:30';
-                    } else if (esSabado(fechaStr)) {
-                        sabadoSalida.value = registro.sabadoSalida || '12:30';
-                    } else {
-                        horaFinal.value = registro.horaFinal || '19:00';
-                    }
-                } else {
-                    esFeriado.checked = esFeriadoReal(fechaStr);
-                    corrido.checked = false;
-                    motivo.value = '';
-                    if (esDomingo(fechaStr) || esFeriado.checked) {
-                        horaEntradaManual.value = '09:30';
-                        horaSalidaManual.value = '15:30';
-                    } else if (esSabado(fechaStr)) {
-                        sabadoSalida.value = '12:30';
-                    } else {
-                        const diaNombre = getDiaSemanaReal(fechaStr);
-                        const base = getHorarioBase(diaNombre);
-                        horaFinal.value = base.s2 || '19:00';
-                    }
-                }
-            }
-            actualizarPreview();
-        });
-
-        // Trigger updates when checkbox is clicked
-        esFeriado.addEventListener('change', function() {
-            const fechaStr = fecha.value;
-            if (fechaStr) {
-                if (esDomingo(fechaStr) || this.checked) {
-                    horaEntradaManual.value = '09:30';
-                    horaSalidaManual.value = '15:30';
-                } else if (esSabado(fechaStr)) {
-                    sabadoSalida.value = '12:30';
-                } else {
-                    const diaNombre = getDiaSemanaReal(fechaStr);
-                    const base = getHorarioBase(diaNombre);
-                    horaFinal.value = base.s2 || '19:00';
-                }
-            }
-            actualizarPreview();
-        });
-
+        fecha.addEventListener('change', actualizarPreview);
         horaFinal.addEventListener('input', actualizarPreview);
         corrido.addEventListener('change', actualizarPreview);
+        esFeriado.addEventListener('change', actualizarPreview);
         horaEntradaManual.addEventListener('input', actualizarPreview);
         horaSalidaManual.addEventListener('input', actualizarPreview);
         sabadoSalida.addEventListener('input', actualizarPreview);
 
-        // ---------- FIREBASE SYNC IMPLEMENTATION ----------
-        function guardarEnFirebase() {
-            if (!isFirebaseInitialized) return;
-            setSyncState('syncing');
-            db.ref('horas_extras/MARCO_GARRIDO/registros').set(registros)
-            .then(() => setSyncState('online'))
-            .catch(err => {
-                console.error("Firebase write error:", err);
-                setSyncState('offline');
-            });
-        }
-
-        function inicializarFirebaseSync() {
-            if (!isFirebaseInitialized) {
-                setSyncState('offline');
-                return;
-            }
-            db.ref('horas_extras/MARCO_GARRIDO/registros').on('value', (snapshot) => {
-                const val = snapshot.val();
-                if (val) {
-                    // Update only if data is actually different to avoid input disruption
-                    if (JSON.stringify(registros) !== JSON.stringify(val)) {
-                        registros = val;
-                        registros.sort((a, b) => {
-                            if (a.año !== b.año) return a.año - b.año;
-                            if (a.mes !== b.mes) return a.mes - b.mes;
-                            return a.dia - b.dia;
-                        });
-                        try {
-                            localStorage.setItem('horasExtras_registros', JSON.stringify(registros));
-                        } catch (e) {}
-                        renderizar();
-                    }
-                    setSyncState('online');
-                } else if (registros.length > 0) {
-                    guardarEnFirebase();
-                } else {
-                    setSyncState('online');
-                }
-            }, (error) => {
-                console.error("Firebase sync error:", error);
-                setSyncState('offline');
-            });
-        }
-
         // ---------- INICIALIZAR ----------
         cargarSelectorMeses();
         cargarDeLocalStorage();
-        
-        // Default to today's date on initial load
-        fecha.value = new Date().toISOString().split('T')[0];
-        
-        // Trigger auto-select period for today's date
-        const initialPeriod = getPeriodoForFecha(fecha.value);
-        if (initialPeriod) {
-            const targetVal = `${initialPeriod.mes}|${initialPeriod.año}`;
-            let hasOption = false;
-            for (let i = 0; i < selectorMes.options.length; i++) {
-                if (selectorMes.options[i].value === targetVal) {
-                    hasOption = true;
-                    break;
-                }
-            }
-            if (hasOption) {
-                selectorMes.value = targetVal;
-                mesSeleccionado = initialPeriod.mes;
-                añoSeleccionado = initialPeriod.año;
-                actualizarPeriodoLabels();
-            }
-        }
-        
         actualizarPreview();
         renderizar();
-        
-        // Sync with Firebase database
-        inicializarFirebaseSync();
 
-        console.log('✅ Sistema listo. Datos guardados en LocalStorage y Firebase.');
+        console.log('✅ Sistema listo. Datos guardados en localStorage.');
     </script>
 </body>
 </html>
