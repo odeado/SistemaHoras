@@ -1332,126 +1332,817 @@
             }
 
             try {
-                const data = [];
+                // Initialize workbook
+                const workbook = new ExcelJS.Workbook();
+                const worksheet = workbook.addWorksheet('Hoja1', {
+                    views: [{ showGridLines: true }]
+                });
+
+                // Column widths
+                const columns = [
+                    { key: 'A', width: 13 },
+                    { key: 'B', width: 13 },
+                    { key: 'C', width: 13 },
+                    { key: 'D', width: 13 },
+                    { key: 'E', width: 13 },
+                    { key: 'F', width: 13 },
+                    { key: 'G', width: 13 },
+                    { key: 'H', width: 13 },
+                    { key: 'I', width: 13 },
+                    { key: 'J', width: 13 },
+                    { key: 'K', width: 13 },
+                    { key: 'L', width: 13 },
+                    { key: 'M', width: 13 },
+                    { key: 'N', width: 13 },
+                    { key: 'O', width: 13 },
+                    { key: 'P', width: 13 },
+                    { key: 'Q', width: 6.57 },
+                    { key: 'R', width: 118.43 }
+                ];
+                worksheet.columns = columns.map(c => ({ header: '', key: c.key, width: c.width }));
+
+                // Helper to parse HH:MM to Excel serial time
+                const parseTimeToExcel = (timeStr) => {
+                    if (!timeStr) return null;
+                    const parts = timeStr.split(':');
+                    const hours = parseInt(parts[0]);
+                    const minutes = parseInt(parts[1]) || 0;
+                    return (hours * 60 + minutes) / 1440;
+                };
+
+                const borderThinBox = {
+                    top: { style: 'thin' },
+                    left: { style: 'thin' },
+                    bottom: { style: 'thin' },
+                    right: { style: 'thin' }
+                };
+
+                const borderThinOpenRight = {
+                    top: { style: 'thin' },
+                    left: { style: 'thin' },
+                    bottom: { style: 'thin' }
+                };
+
+                const borderMedium = {
+                    top: { style: 'medium' },
+                    left: { style: 'medium' },
+                    bottom: { style: 'medium' },
+                    right: { style: 'medium' }
+                };
+
+                const fillWhite = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFF' } };
+                const fillGreen = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'CCFFCC' } };
+                const fillCyan = { type: 'pattern', pattern: 'solid', fgColor: { argb: '00FFFF' } };
+                const fillIvory = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFCC' } };
+                const fillRed = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0000' } };
+                const fillYellow = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFF00' } };
+                const fillLightBlue = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'CCFFFF' } };
+                const fillTan = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCC99' } };
+                const fillPink = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF99CC' } };
+                const fillPaleBlue = { type: 'pattern', pattern: 'solid', fgColor: { argb: '99CCFF' } };
+
+                // Helper to apply fill to a range (even if merged)
+                const fillRange = (rangeStartCol, rangeStartRow, rangeEndCol, rangeEndRow, fillObj) => {
+                    for (let row = rangeStartRow; row <= rangeEndRow; row++) {
+                        for (let col = rangeStartCol; col <= rangeEndCol; col++) {
+                            worksheet.getRow(row).getCell(col).fill = fillObj;
+                        }
+                    }
+                };
+
+                // Helper to set cell borders
+                const setCellBorder = (cell, top, left, bottom, right) => {
+                    cell.border = {
+                        top: top ? { style: top } : undefined,
+                        left: left ? { style: left } : undefined,
+                        bottom: bottom ? { style: bottom } : undefined,
+                        right: right ? { style: right } : undefined
+                    };
+                };
+                const setBorder = setCellBorder;
+
+                // Row heights & setup
+                // Row 1
+                worksheet.getCell('A1').value = 'EMELNOR S.A.';
+                worksheet.getCell('A1').font = { name: 'Arial', size: 10, bold: true };
+                worksheet.getCell('A1').fill = fillWhite;
+
+                // Row 2
+                worksheet.mergeCells('A2:R2');
+                const cellA2 = worksheet.getCell('A2');
+                cellA2.value = 'CONVENIO Y CONTROL DE HORAS EXTRAORDINARIAS';
+                cellA2.font = { name: 'Arial', size: 14, bold: true };
+                cellA2.alignment = { horizontal: 'center' };
+                worksheet.getRow(2).height = 18;
+
+                // Row 3
+                for (let col = 1; col <= 18; col++) {
+                    const cell = worksheet.getRow(3).getCell(col);
+                    cell.font = { name: 'Arial', size: 14, bold: true };
+                    cell.alignment = { horizontal: 'center' };
+                }
+                worksheet.getRow(3).height = 18;
+
+                // Row 4
+                worksheet.mergeCells('A4:C4');
+                worksheet.getCell('A4').value = 'En  Antofagasta a        ';
+                worksheet.getCell('A4').font = { name: 'Arial', size: 12 };
+
+                worksheet.mergeCells('D4:H4');
+                const cellD4 = worksheet.getCell('D4');
+                cellD4.value = new Date();
+                cellD4.font = { name: 'Arial', size: 12, bold: true };
+                cellD4.numFmt = 'dd" de "mmmm" del "yyyy';
+                cellD4.alignment = { horizontal: 'center' };
+                fillRange(4, 4, 8, 4, fillGreen); // D4:H4 green
+
+                worksheet.getCell('I4').value = 'se suscribe  el  presente convenio , mediante el cual el trabajador acuerda laborar horas   extraordinarias, de acuerdo a';
+                worksheet.getCell('I4').font = { name: 'Arial', size: 12 };
+                worksheet.getRow(4).height = 18;
+
+                // Row 5
+                worksheet.mergeCells('A5:R5');
+                worksheet.getRow(5).height = 15.75;
+
+                // Row 6
+                const info = getPeriodoInfo(mesSeleccionado, añoSeleccionado);
+                const inicio = getFechaInicioPeriodo(mesSeleccionado, añoSeleccionado);
+                const fin = getFechaFinPeriodo(mesSeleccionado, añoSeleccionado);
+                const padZero = (n) => String(n).padStart(2, '0');
+                const startStr = `${padZero(inicio.getDate())}/${padZero(inicio.getMonth() + 1)}/${inicio.getFullYear()}`;
+                const endStr = `${padZero(fin.getDate())}/${padZero(fin.getMonth() + 1)}/${fin.getFullYear()}`;
+
+                worksheet.mergeCells('A6:R6');
+                const cellA6 = worksheet.getCell('A6');
+                cellA6.value = 'Periodo de  Vigencia del Convenio: ' + startStr + ' al ' + endStr;
+                cellA6.font = { name: 'Arial', size: 12, bold: true };
+                cellA6.alignment = { horizontal: 'center' };
+                cellA6.numFmt = 'mmmm" del "yyyy';
+                fillRange(1, 6, 18, 6, fillGreen); // A6:R6 green
+                worksheet.getRow(6).height = 15.75;
+
+                // Row 7
+                worksheet.mergeCells('A7:C7');
+                const cellA7 = worksheet.getCell('A7');
+                cellA7.value = 'Funcionario(a):';
+                cellA7.font = { name: 'Arial', size: 12, bold: true };
+                cellA7.alignment = { horizontal: 'center' };
+                cellA7.numFmt = 'mmm-yy';
+
+                worksheet.mergeCells('D7:I7');
+                const cellD7 = worksheet.getCell('D7');
+                cellD7.value = 'MARCO GARRIDO';
+                cellD7.font = { name: 'Arial', size: 12, bold: true };
+                fillRange(4, 7, 9, 7, fillCyan); // D7:I7 cyan
+
+                worksheet.mergeCells('P7:Q7');
+                const cellP7 = worksheet.getCell('P7');
+                cellP7.value = 'Cargo:';
+                cellP7.font = { name: 'Arial', size: 12, bold: true };
+                cellP7.alignment = { horizontal: 'right' };
+                cellP7.numFmt = 'mmm-yy';
+                worksheet.getCell('R7').numFmt = 'mmm-yy';
+                worksheet.getRow(7).height = 15.75;
+
+                // Row 8
+                worksheet.getCell('A8').value = 'Nº Tarjeta:';
+                worksheet.getCell('A8').font = { name: 'Arial', size: 12, bold: true };
+                worksheet.getCell('A8').fill = fillWhite;
+                worksheet.getCell('A8').numFmt = 'mmm-yy';
+                worksheet.getCell('B8').numFmt = 'mmm-yy';
+                worksheet.getCell('B8').font = { name: 'Arial', size: 12, bold: true };
+
+                worksheet.getCell('C8').fill = fillGreen;
+                worksheet.getCell('C8').numFmt = '#,##0';
+                worksheet.getCell('C8').font = { name: 'Arial', size: 12 };
+                worksheet.getCell('C8').alignment = { horizontal: 'center' };
+                setCellBorder(worksheet.getCell('C8'), null, null, 'medium', null);
+
+                worksheet.getCell('E8').value = 'Área:';
+                worksheet.getCell('E8').font = { name: 'Arial', size: 10, bold: true };
+
+                worksheet.mergeCells('F8:O8');
+                const cellF8 = worksheet.getCell('F8');
+                cellF8.value = 'Sistemas ';
+                cellF8.font = { name: 'Arial', size: 12 };
+                fillRange(6, 8, 15, 8, fillWhite);
+                for (let col = 6; col <= 15; col++) {
+                    setCellBorder(worksheet.getRow(8).getCell(col), null, null, 'medium', null);
+                }
+                
+                worksheet.mergeCells('P8:Q8');
+                const cellP8 = worksheet.getCell('P8');
+                cellP8.value = 'Jefe directo:';
+                cellP8.font = { name: 'Arial', size: 12, bold: true };
+                cellP8.alignment = { horizontal: 'right' };
+                cellP8.numFmt = 'mmm-yy';
+                setCellBorder(worksheet.getCell('P8'), null, null, 'medium', null);
+                setCellBorder(worksheet.getCell('Q8'), null, null, 'medium', null);
+
+                worksheet.getCell('R8').value = 'Carlos Rodriguez';
+                worksheet.getCell('R8').font = { name: 'Arial', size: 12 };
+                worksheet.getCell('R8').numFmt = 'mmm-yy';
+                worksheet.getRow(8).height = 16.5;
+
+                // Row 9 Headers - using \u00aa (feminine ordinal indicator ª)
+                worksheet.getCell('C9').value = '1\u00aa';
+                worksheet.getCell('D9').value = '1\u00aa';
+                worksheet.getCell('E9').value = '2\u00aa';
+                worksheet.getCell('F9').value = '2\u00aa';
+                worksheet.getCell('G9').value = '3\u00aa';
+                worksheet.getCell('H9').value = '3\u00aa';
+                worksheet.getCell('I9').value = '4\u00aa';
+                worksheet.getCell('J9').value = '4\u00aa';
+                worksheet.getCell('K9').value = 'TPO.';
+                
+                worksheet.mergeCells('L9:N9');
+                worksheet.getCell('L9').value = 'HORAS';
+
+                worksheet.mergeCells('O9:Q9');
+                worksheet.getCell('O9').value = 'Nº DE HORAS';
+
+                // Row 10 Headers
+                worksheet.mergeCells('A10:B10');
+                worksheet.getCell('A10').value = 'DÍA';
+                
+                worksheet.getCell('C10').value = 'ENT.';
+                worksheet.getCell('D10').value = 'SAL.';
+                worksheet.getCell('E10').value = 'ENT.';
+                worksheet.getCell('F10').value = 'SAL.';
+                worksheet.getCell('G10').value = 'ENT.';
+                worksheet.getCell('H10').value = 'SAL.';
+                worksheet.getCell('I10').value = 'ENT.';
+                worksheet.getCell('J10').value = 'SAL.';
+                worksheet.getCell('K10').value = 'PERM.';
+
+                worksheet.mergeCells('L10:N10');
+                worksheet.getCell('L10').value = 'PERM.';
+
+                worksheet.getCell('O10').value = 'Total';
+                worksheet.getCell('P10').value = 'Norm.';
+                worksheet.getCell('Q10').value = 'Extras';
+                worksheet.getCell('R10').value = 'MOTIVO DE HORAS EXTRAORDINARIAS';
+
+                // Apply colors to Headers row 9 & 10
+                fillRange(3, 9, 4, 9, fillTan); // 1º Ent/Sal
+                fillRange(3, 10, 4, 10, fillTan);
+                fillRange(5, 9, 6, 9, fillLightBlue); // 2º
+                fillRange(5, 10, 6, 10, fillLightBlue);
+                fillRange(7, 9, 8, 9, fillPink); // 3º
+                fillRange(7, 10, 8, 10, fillPink);
+                fillRange(9, 9, 10, 9, fillPaleBlue); // 4º
+                fillRange(9, 10, 10, 10, fillPaleBlue);
+                
+                worksheet.getCell('Q10').fill = fillIvory;
+
+                // Format Rows 9 and 10 fonts/alignments
+                const colNames = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R'];
+                colNames.forEach(col => {
+                    const c9 = worksheet.getCell(`${col}9`);
+                    const c10 = worksheet.getCell(`${col}10`);
+
+                    const isAB9 = col === 'A' || col === 'B';
+                    c9.font = { name: 'Arial', size: 10, bold: !isAB9 && col !== 'R' };
+                    c10.font = { name: 'Arial', size: 10, bold: true };
+
+                    if (!isAB9 && col !== 'R') {
+                        c9.alignment = { horizontal: 'center' };
+                    }
+                    c10.alignment = { horizontal: 'center' };
+                });
+
+                // Precise Row 9 borders (on master cells only for merged ranges)
+                setBorder(worksheet.getCell('A9'), 'medium', 'medium', null, null);
+                setBorder(worksheet.getCell('B9'), 'medium', null, null, 'medium');
+                for (let c = 3; c <= 11; c++) {
+                    setBorder(worksheet.getRow(9).getCell(c), 'medium', 'medium', null, null);
+                }
+                // L9:N9 merged -> master L9 gets the outer borders
+                setBorder(worksheet.getCell('L9'), 'medium', 'medium', null, 'medium');
+                // O9:Q9 merged -> master O9 gets the outer borders
+                setBorder(worksheet.getCell('O9'), 'medium', 'medium', 'medium', 'medium');
+                setBorder(worksheet.getCell('R9'), 'medium', 'medium', null, 'medium');
+
+                // Precise Row 10 borders (on master cells only for merged ranges)
+                // A10:B10 merged -> master A10 gets outer borders
+                setBorder(worksheet.getCell('A10'), null, 'medium', 'medium', 'medium');
+                for (let c = 3; c <= 11; c++) {
+                    setBorder(worksheet.getRow(10).getCell(c), null, 'medium', 'medium', null);
+                }
+                // L10:N10 merged -> master L10 gets outer borders
+                setBorder(worksheet.getCell('L10'), null, 'medium', 'medium', 'medium');
+                
+                setBorder(worksheet.getCell('O10'), 'medium', 'medium', 'medium', 'medium');
+                setBorder(worksheet.getCell('P10'), 'medium', 'medium', 'medium', 'medium');
+                setBorder(worksheet.getCell('Q10'), 'medium', 'medium', 'medium', 'medium');
+                setBorder(worksheet.getCell('R10'), null, 'medium', 'medium', 'medium');
+
+                worksheet.getRow(9).height = 15.75;
+                worksheet.getRow(10).height = 15.75;
+
                 const registroMap = {};
                 registrosFiltrados.forEach(r => {
                     registroMap[r.fecha] = r;
                 });
 
-                diasDelPeriodo.forEach(fechaStr => {
-                    const diaNum = obtenerDiaDesdeFecha(fechaStr);
-                    const diaNombre = getDiaSemanaReal(fechaStr);
-                    const esDom = diaNombre === 'Domingo';
-                    const esSab = diaNombre === 'Sábado';
-                    const esFer = esFeriadoReal(fechaStr);
+                // Populate data rows 11 to 42
+                let r = 11;
+                let firstRowOfWeek = 11;
+                let weekBaseHours = 0;
 
-                    let registro = registroMap[fechaStr];
-                    let h;
+                const totalRowsToGenerate = 32;
+                for (let index = 0; index < totalRowsToGenerate; index++) {
+                    const isPadding = (index >= diasDelPeriodo.length);
+                    let fechaStr = null;
+                    let diaNum = '';
+                    let diaNombre = '';
+                    let esDom = false;
+                    let esSab = false;
+                    let esFer = false;
+                    let h = null;
 
-                    if (registro) {
-                        h = {
-                            e1: registro.e1,
-                            s1: registro.s1,
-                            e2: registro.e2,
-                            s2: registro.s2,
-                            total: registro.total,
-                            normales: registro.normales,
-                            extras: registro.extras,
-                            esCorrido: registro.esCorrido,
-                            esManual: registro.esManual,
-                            motivo: registro.motivo || ''
-                        };
-                    } else {
-                        if (esDom || esFer) {
-                            h = { e1: '', s1: '', e2: '', s2: '', total: 0, normales: 0, extras: 0,
-                                esCorrido: false, esManual: true, motivo: '' };
-                        } else if (esSab) {
-                            h = { e1: '10:00', s1: '12:30', e2: '12:30', s2: '12:30', total: 2.5,
-                                normales: 2.5, extras: 0, esCorrido: true, esManual: false, motivo: '' };
-                        } else {
-                            const base = getHorarioBase(diaNombre);
+                    if (!isPadding) {
+                        fechaStr = diasDelPeriodo[index];
+                        diaNum = obtenerDiaDesdeFecha(fechaStr);
+                        diaNombre = getDiaSemanaReal(fechaStr);
+                        esDom = diaNombre === 'Domingo' || diaNombre === 'domingo';
+                        esSab = diaNombre === 'Sábado' || diaNombre === 'sábado';
+                        esFer = esFeriadoReal(fechaStr);
+
+                        let registro = registroMap[fechaStr];
+                        if (registro) {
                             h = {
-                                e1: base.e1,
-                                s1: base.s1,
-                                e2: base.e2,
-                                s2: base.s2,
-                                total: base.base,
-                                normales: base.base,
-                                extras: 0,
-                                esCorrido: false,
-                                esManual: false,
-                                motivo: ''
+                                e1: registro.e1,
+                                s1: registro.s1,
+                                e2: registro.e2,
+                                s2: registro.s2,
+                                total: registro.total,
+                                normales: registro.normales,
+                                extras: registro.extras,
+                                esCorrido: registro.esCorrido,
+                                esManual: registro.esManual,
+                                motivo: registro.motivo || '',
+                                esFeriado: registro.esFeriado
                             };
+                        } else {
+                            if (esDom || esFer) {
+                                h = { e1: '', s1: '', e2: '', s2: '', total: 0, normales: 0, extras: 0, esCorrido: false, esManual: true, motivo: '', esFeriado: esFer };
+                            } else if (esSab) {
+                                h = { e1: '10:00', s1: '12:30', e2: '', s2: '', total: 2.5, normales: 2.5, extras: 0, esCorrido: true, esManual: false, motivo: '', esFeriado: false };
+                            } else {
+                                const base = getHorarioBase(diaNombre);
+                                h = {
+                                    e1: base.e1,
+                                    s1: base.s1,
+                                    e2: base.e2,
+                                    s2: base.s2,
+                                    total: base.base,
+                                    normales: base.base,
+                                    extras: 0,
+                                    esCorrido: false,
+                                    esManual: false,
+                                    motivo: '',
+                                    esFeriado: false
+                                };
+                            }
+                        }
+                    } else {
+                        // Padding row
+                        h = { e1: '', s1: '', e2: '', s2: '', total: 0, normales: 0, extras: 0, esCorrido: false, esManual: true, motivo: '', esFeriado: false };
+                    }
+
+                    const cellA = worksheet.getCell(`A${r}`);
+                    const cellB = worksheet.getCell(`B${r}`);
+                    const cellC = worksheet.getCell(`C${r}`);
+                    const cellD = worksheet.getCell(`D${r}`);
+                    const cellE = worksheet.getCell(`E${r}`);
+                    const cellF = worksheet.getCell(`F${r}`);
+                    const cellG = worksheet.getCell(`G${r}`);
+                    const cellH = worksheet.getCell(`H${r}`);
+                    const cellI = worksheet.getCell(`I${r}`);
+                    const cellJ = worksheet.getCell(`J${r}`);
+                    const cellK = worksheet.getCell(`K${r}`);
+                    const cellL = worksheet.getCell(`L${r}`);
+                    const cellM = worksheet.getCell(`M${r}`);
+                    const cellN = worksheet.getCell(`N${r}`);
+                    const cellR = worksheet.getCell(`R${r}`);
+
+                    cellA.value = diaNum;
+                    cellB.value = diaNombre ? diaNombre.toLowerCase() : '';
+
+                    cellC.value = h.e1 ? parseTimeToExcel(h.e1) : '';
+                    cellD.value = h.s1 ? parseTimeToExcel(h.s1) : '';
+                    cellE.value = h.e2 ? parseTimeToExcel(h.e2) : '';
+                    cellF.value = h.s2 ? parseTimeToExcel(h.s2) : '';
+                    cellG.value = '';
+                    cellH.value = '';
+                    cellI.value = '';
+                    cellJ.value = '';
+
+                    cellK.value = { formula: `(D${r}-C${r})+(F${r}-E${r})+(H${r}-G${r})+(J${r}-I${r})` };
+                    cellL.value = { formula: `HOUR(K${r})` };
+                    cellM.value = { formula: `(MINUTE(K${r}))/60` };
+                    cellN.value = { formula: `+L${r}+M${r}` };
+                    cellR.value = h.motivo || '';
+
+                    // Apply numFmt
+                    cellC.numFmt = 'h:mm';
+                    cellD.numFmt = 'h:mm';
+                    cellE.numFmt = 'h:mm';
+                    cellF.numFmt = 'h:mm';
+                    cellG.numFmt = 'h:mm';
+                    cellH.numFmt = 'h:mm';
+                    cellI.numFmt = 'h:mm';
+                    cellJ.numFmt = 'h:mm';
+                    cellK.numFmt = 'h:mm';
+                    cellL.numFmt = '#,##0;[Red]\\(#,##0\\)';
+                    cellM.numFmt = '#,##0.00;[Red]\\(#,##0.00\\)';
+                    cellN.numFmt = '#,##0.00;[Red]\\(#,##0.00\\)';
+
+                    // Arial 10pt regular for all cell rows
+                    const rowCells = [cellA, cellB, cellC, cellD, cellE, cellF, cellG, cellH, cellI, cellJ, cellK, cellL, cellM, cellN, cellR];
+                    rowCells.forEach(cell => {
+                        cell.font = { name: 'Arial', size: 10 };
+                    });
+                    cellN.font = { name: 'Arial', size: 10, bold: true };
+
+                    // Precise borders for daily row
+                    const isSundayOrHoliday = esDom || esFer;
+                    if (isSundayOrHoliday) {
+                        const boxCols = [cellA, cellB, cellJ, cellK, cellR];
+                        boxCols.forEach(c => c.border = borderThinBox);
+                        const openRightCols = [cellC, cellD, cellE, cellF, cellG, cellH, cellI, cellL, cellM, cellN];
+                        openRightCols.forEach(c => c.border = borderThinOpenRight);
+                    } else {
+                        const boxCols = [cellA, cellB, cellG, cellH, cellI, cellJ, cellK, cellR];
+                        boxCols.forEach(c => c.border = borderThinBox);
+                        const openRightCols = [cellC, cellD, cellE, cellF, cellL, cellM, cellN];
+                        openRightCols.forEach(c => c.border = borderThinOpenRight);
+                    }
+
+                    if (r === 35 || r === 42) {
+                        cellR.border = {
+                            top: undefined,
+                            bottom: undefined,
+                            left: undefined,
+                            right: undefined
+                        };
+                    }
+
+                    cellB.alignment = { horizontal: 'left' };
+                    const centerCells = [cellC, cellD, cellE, cellF, cellG, cellH, cellI, cellJ, cellK];
+                    centerCells.forEach(c => c.alignment = { horizontal: 'center' });
+
+                    // Fills
+                    cellA.fill = fillWhite;
+
+                    let fill = null;
+                    const workedAny = h.e1 && h.s1;
+
+                    if (isSundayOrHoliday) {
+                        if (workedAny) {
+                            fill = fillRed;
+                        } else {
+                            fill = fillYellow;
+                        }
+                    } else {
+                        fill = fillLightBlue;
+                    }
+
+                    if (isSundayOrHoliday) {
+                        // Fill C to Q with red/yellow on Sundays/Holidays
+                        for (let col = 3; col <= 17; col++) {
+                            worksheet.getRow(r).getCell(col).fill = fill;
+                        }
+                    } else {
+                        // Fill C to J with light blue, K to N with white
+                        for (let col = 3; col <= 10; col++) {
+                            worksheet.getRow(r).getCell(col).fill = fill;
+                        }
+                        for (let col = 11; col <= 14; col++) {
+                            worksheet.getRow(r).getCell(col).fill = fillWhite;
                         }
                     }
 
-                    // Formatear horario como en el Excel original
-                    let horarioStr;
-                    if (esDom || esFer) {
-                        horarioStr = h.e1 && h.s1 ? `${h.e1}→${h.s1}` : '';
-                    } else if (esSab) {
-                        horarioStr = `${h.e1}→${h.s1}`;
-                    } else if (h.esCorrido) {
+                    if (!isPadding) {
                         const base = getHorarioBase(diaNombre);
-                        horarioStr = `${base.e1}→${base.s1} ${base.s1}→${h.s2}`;
+                        if (isSundayOrHoliday) {
+                            weekBaseHours += 0;
+                        } else {
+                            weekBaseHours += base.base;
+                        }
                     } else {
-                        const base = getHorarioBase(diaNombre);
-                        horarioStr = `${base.e1}→${base.s1} ${base.e2}→${h.s2}`;
+                        weekBaseHours += 0;
                     }
 
-                    // Formatear total como tiempo (HH:MM)
-                    const totalHoras = h.total;
-                    const horasEnteras = Math.floor(totalHoras);
-                    const minutos = Math.round((totalHoras - horasEnteras) * 60);
-                    const totalStr = `${horasEnteras}:${minutos.toString().padStart(2, '0')}`;
+                    const isLastRow = (index === totalRowsToGenerate - 1);
+                    if (isSundayOrHoliday || isLastRow) {
+                        const cellO = worksheet.getCell(`O${r}`);
+                        const cellP = worksheet.getCell(`P${r}`);
+                        const cellQ = worksheet.getCell(`Q${r}`);
 
-                    data.push({
-                        'DÍA': `${diaNum}${diaNombre.substring(0,3)}`,
-                        'ENT.': h.e1 || '',
-                        'SAL.': h.s1 || '',
-                        'ENT. ': h.e2 || '',
-                        'SAL. ': h.s2 || '',
-                        'ENT.  ': '',
-                        'SAL.  ': '',
-                        'ENT.   ': '',
-                        'SAL.   ': '',
-                        'TPO. PERM.': '',
-                        'HORAS PERM.': '',
-                        'Total': totalStr,
-                        'Norm.': Math.round(h.normales * 100) / 100,
-                        'Extras': Math.round(h.extras * 100) / 100,
-                        'MOTIVO': h.motivo || ''
-                    });
+                        cellO.value = { formula: `SUM(N${firstRowOfWeek}:N${r})` };
+                        cellP.value = weekBaseHours;
+                        cellQ.value = { formula: `SUM(O${r}-P${r})` };
+
+                        cellO.numFmt = '0.00';
+                        cellP.numFmt = '0.00';
+                        cellQ.numFmt = '0.00';
+
+                        const summaryCells = [cellO, cellP, cellQ];
+                        summaryCells.forEach(c => {
+                            c.font = { name: 'Arial', size: 10, bold: true };
+                            if (c === cellQ) {
+                                c.alignment = undefined; // Left/none alignment for Extras summary cell
+                            } else {
+                                c.alignment = { horizontal: 'center' };
+                            }
+                            if (isSundayOrHoliday) {
+                                c.border = {
+                                    left: { style: 'thin' },
+                                    right: { style: 'thin' },
+                                    bottom: { style: 'thin' }
+                                };
+                            } else {
+                                c.border = borderThinBox;
+                            }
+                        });
+
+                        firstRowOfWeek = r + 1;
+                        weekBaseHours = 0;
+                    } else {
+                        const cellO = worksheet.getCell(`O${r}`);
+                        const cellP = worksheet.getCell(`P${r}`);
+                        const cellQ = worksheet.getCell(`Q${r}`);
+                        const emptyCells = [cellO, cellP, cellQ];
+                        emptyCells.forEach(c => {
+                            c.value = '';
+                            c.font = { name: 'Arial', size: 10 };
+                            c.border = borderThinBox;
+                        });
+                    }
+
+                    r++;
+                }
+
+                // Totals at bottom
+                // Row 43 (empty Sunday row in template)
+                for (let col = 1; col <= 18; col++) {
+                    const colName = colNames[col - 1];
+                    const cell = worksheet.getCell(`${colName}43`);
+                    cell.font = { name: 'Arial', size: 10 };
+                    cell.fill = fillYellow;
+                }
+                worksheet.getCell('A43').border = borderThinBox;
+
+                // Row 44 (empty spacer row)
+                worksheet.getRow(44).height = 15.75;
+                for (let col = 1; col <= 18; col++) {
+                    const colName = colNames[col - 1];
+                    const cell = worksheet.getCell(`${colName}44`);
+                    cell.font = { name: 'Arial', size: 10 };
+                }
+
+                // Row 45 (Totals)
+                worksheet.getRow(45).height = 15.75;
+                for (let col = 1; col <= 18; col++) {
+                    const colName = colNames[col - 1];
+                    const cell = worksheet.getCell(`${colName}45`);
+                    cell.font = { name: 'Arial', size: 10 };
+                }
+                
+                // Set values & formats for totals
+                const cellN45 = worksheet.getCell('N45');
+                cellN45.value = { formula: 'SUM(N7:N42)' };
+                cellN45.font = { name: 'Arial', size: 10, bold: true };
+                cellN45.numFmt = '0.00';
+                cellN45.border = borderMedium;
+
+                const cellO45 = worksheet.getCell('O45');
+                cellO45.value = { formula: 'SUM(O11:O42)' };
+                cellO45.font = { name: 'Arial', size: 10, bold: true };
+                cellO45.numFmt = '0.00';
+                cellO45.alignment = { horizontal: 'center' };
+                cellO45.border = borderMedium;
+
+                const cellP45 = worksheet.getCell('P45');
+                cellP45.value = { formula: 'SUM(P11:P42)' };
+                cellP45.font = { name: 'Arial', size: 10, bold: true };
+                cellP45.numFmt = '0.00';
+                cellP45.alignment = { horizontal: 'center' };
+                cellP45.border = borderMedium;
+
+                const cellQ45 = worksheet.getCell('Q45');
+                cellQ45.value = { formula: 'SUM(Q13:Q42)' };
+                cellQ45.font = { name: 'Arial', size: 10, bold: true };
+                cellQ45.numFmt = '0.00';
+                cellQ45.alignment = { horizontal: 'center' };
+                cellQ45.border = borderMedium;
+
+                // Medium top border for A45 and C45:M45
+                setCellBorder(worksheet.getCell('A45'), 'medium', null, null, null);
+                for (let col = 3; col <= 13; col++) {
+                    setCellBorder(worksheet.getRow(45).getCell(col), 'medium', null, null, null);
+                }
+                // K45 alignment center
+                worksheet.getCell('K45').alignment = { horizontal: 'center' };
+
+                // Row 46 (Percentage & Extras)
+                worksheet.getRow(46).height = 15.75;
+                for (let col = 1; col <= 18; col++) {
+                    const colName = colNames[col - 1];
+                    const cell = worksheet.getCell(`${colName}46`);
+                    cell.font = { name: 'Arial', size: 10 };
+                }
+                
+                // Set values, formats & borders for row 46
+                worksheet.getCell('N46').font = { name: 'Arial', size: 10, bold: true };
+                worksheet.getCell('O46').font = { name: 'Arial', size: 10, bold: true };
+                worksheet.getCell('P46').font = { name: 'Arial', size: 10, bold: true };
+                worksheet.getCell('Q46').font = { name: 'Arial', size: 10, bold: true };
+                
+                worksheet.getCell('N46').numFmt = '0.00';
+                worksheet.getCell('O46').numFmt = '0.00';
+                worksheet.getCell('P46').numFmt = '0.00';
+                worksheet.getCell('Q46').numFmt = '0.00';
+
+                worksheet.getCell('K46').alignment = { horizontal: 'center' };
+                worksheet.getCell('O46').alignment = { horizontal: 'center' };
+                worksheet.getCell('P46').alignment = { horizontal: 'center' };
+                worksheet.getCell('Q46').alignment = { horizontal: 'center' };
+
+                worksheet.getCell('Q46').fill = fillYellow;
+                worksheet.getCell('Q46').border = borderMedium;
+
+                const cellR46 = worksheet.getCell('R46');
+                cellR46.value = 0.5;
+                cellR46.font = { name: 'Arial', size: 10, bold: true };
+                cellR46.fill = fillYellow;
+                cellR46.alignment = { horizontal: 'center' };
+                cellR46.numFmt = '0%';
+                cellR46.border = borderMedium;
+
+                // Row 47 (empty divider row)
+                for (let col = 1; col <= 18; col++) {
+                    const colName = colNames[col - 1];
+                    const cell = worksheet.getCell(`${colName}47`);
+                    cell.font = { name: 'Arial', size: 10 };
+                }
+                worksheet.getCell('L47').alignment = { horizontal: 'center' };
+                worksheet.getCell('Q47').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCC00' } };
+                
+                // Row 47 medium top divider border on A47 to Q47
+                for (let col = 1; col <= 17; col++) {
+                    const cell = worksheet.getRow(47).getCell(col);
+                    cell.border = { top: { style: 'medium' } };
+                }
+                // A47 also has left medium border
+                worksheet.getCell('A47').border = { top: { style: 'medium' }, left: { style: 'medium' } };
+
+                // Row 48
+                for (let col = 1; col <= 18; col++) {
+                    const colName = colNames[col - 1];
+                    const cell = worksheet.getCell(`${colName}48`);
+                    cell.font = { name: 'Arial', size: 10 };
+                }
+                worksheet.getCell('A48').value = ' Primero: A través del presente documento, el  trabajador  quien  suscribe  el  presente convenio y   autorización de horas extraordinarias,    acepta  y  reconoce  que las horas   ';
+                worksheet.getCell('A48').alignment = { horizontal: 'left' };
+                worksheet.getCell('B48').alignment = { horizontal: 'left' };
+                worksheet.getCell('L48').alignment = { horizontal: 'center' };
+                worksheet.getCell('R48').alignment = { horizontal: 'left' };
+                worksheet.getCell('Q48').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCC00' } };
+
+                // Row 49
+                for (let col = 1; col <= 18; col++) {
+                    const colName = colNames[col - 1];
+                    const cell = worksheet.getCell(`${colName}49`);
+                    cell.font = { name: 'Arial', size: 10 };
+                }
+                worksheet.getCell('A49').value = 'extraordinarias aquí expuestas  son  las  únicas   horas trabajadas  con  autorización  del  empleador  y consecuentemente  reconoce que son las que deben  ser canceladas como tal.';
+                worksheet.getCell('A49').alignment = { horizontal: 'left' };
+                worksheet.getCell('L49').alignment = { horizontal: 'center' };
+                worksheet.getCell('Q49').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCC00' } };
+
+                // Row 50
+                for (let col = 1; col <= 18; col++) {
+                    const colName = colNames[col - 1];
+                    const cell = worksheet.getCell(`${colName}50`);
+                    cell.font = { name: 'Arial', size: 10 };
+                }
+                worksheet.getCell('A50').value = 'Segundo: Los abajo firmantes declaran que las horas de entrada y salida señaladas en el presente documento, son fiel reflejo de lo registrado en las tarjetas de control de asistencia utilizadas formal y oficialmente por el Empleador,';
+                worksheet.getCell('A50').font = { name: 'Arial', size: 10, bold: true };
+                for (let col = 1; col <= 17; col++) {
+                    worksheet.getRow(50).getCell(col).alignment = { horizontal: 'left' };
+                }
+                worksheet.getCell('Q50').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCC00' } };
+                worksheet.getCell('A50').border = { left: { style: 'medium' } };
+
+                // Row 51
+                for (let col = 1; col <= 18; col++) {
+                    const colName = colNames[col - 1];
+                    const cell = worksheet.getCell(`${colName}51`);
+                    cell.font = { name: 'Arial', size: 10 };
+                }
+                worksheet.getCell('A51').value = 'expresando su conformidad con los cálculos y demás datos indicados. ';
+                worksheet.getCell('L51').alignment = { horizontal: 'center' };
+                worksheet.getCell('Q51').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCC00' } };
+                worksheet.getCell('A51').border = { left: { style: 'medium' } };
+
+                // Row 52
+                for (let col = 1; col <= 18; col++) {
+                    const colName = colNames[col - 1];
+                    const cell = worksheet.getCell(`${colName}52`);
+                    cell.font = { name: 'Arial', size: 10 };
+                }
+                worksheet.getCell('R52').value = '________________________________';
+                worksheet.getCell('L52').alignment = { horizontal: 'center' };
+                worksheet.getCell('Q52').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCC00' } };
+                worksheet.getCell('A52').border = { left: { style: 'medium' } };
+
+                // Row 53
+                worksheet.getRow(53).height = 15.75;
+                for (let col = 1; col <= 18; col++) {
+                    const colName = colNames[col - 1];
+                    const cell = worksheet.getCell(`${colName}53`);
+                    cell.font = { name: 'Arial', size: 10 };
+                }
+                worksheet.getCell('R53').value = 'VºBº Jefe Depto. Recurso Humano';
+                worksheet.getCell('R53').font = { name: 'Arial', size: 10, bold: true };
+                worksheet.getCell('L53').alignment = { horizontal: 'center' };
+                worksheet.getCell('R53').alignment = { horizontal: 'left' };
+                worksheet.getCell('Q53').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCC00' } };
+                worksheet.getCell('A53').border = { left: { style: 'medium' } };
+
+                // Row 54
+                for (let col = 1; col <= 18; col++) {
+                    const colName = colNames[col - 1];
+                    const cell = worksheet.getCell(`${colName}54`);
+                    cell.font = { name: 'Arial', size: 10 };
+                }
+                worksheet.getCell('L54').alignment = { horizontal: 'center' };
+                worksheet.getCell('Q54').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCC00' } };
+                worksheet.getCell('A54').border = { left: { style: 'medium' } };
+                worksheet.getCell('R54').border = { top: { style: 'medium' }, right: { style: 'medium' } };
+
+                // Row 55
+                for (let col = 1; col <= 18; col++) {
+                    const colName = colNames[col - 1];
+                    const cell = worksheet.getCell(`${colName}55`);
+                    cell.font = { name: 'Arial', size: 10 };
+                }
+                worksheet.getCell('B55').value = 'Firma Funcionario';
+                worksheet.getCell('J55').value = 'Firma Jefe Directo';
+                worksheet.getCell('R55').alignment = { horizontal: 'left' };
+                worksheet.getCell('Q55').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCC00' } };
+                
+                worksheet.getCell('B55').font = { name: 'Arial', size: 10, bold: true };
+                worksheet.getCell('C55').font = { name: 'Arial', size: 10, bold: true };
+                worksheet.getCell('D55').font = { name: 'Arial', size: 10, bold: true };
+                worksheet.getCell('J55').font = { name: 'Arial', size: 10, bold: true };
+                worksheet.getCell('K55').font = { name: 'Arial', size: 10, bold: true };
+                worksheet.getCell('L55').font = { name: 'Arial', size: 10, bold: true };
+                worksheet.getCell('M55').font = { name: 'Arial', size: 10, bold: true };
+                worksheet.getCell('N55').font = { name: 'Arial', size: 10, bold: true };
+                worksheet.getCell('O55').font = { name: 'Arial', size: 10, bold: true };
+
+                worksheet.getCell('B55').border = { top: { style: 'thin' } };
+                worksheet.getCell('C55').border = { top: { style: 'thin' } };
+                worksheet.getCell('D55').border = { top: { style: 'thin' } };
+                worksheet.getCell('J55').border = { top: { style: 'thin' } };
+                worksheet.getCell('K55').border = { top: { style: 'thin' } };
+                worksheet.getCell('L55').border = { top: { style: 'thin' } };
+                worksheet.getCell('M55').border = { top: { style: 'thin' } };
+                worksheet.getCell('N55').border = { top: { style: 'thin' } };
+                worksheet.getCell('O55').border = { top: { style: 'thin' } };
+
+                worksheet.getCell('A55').border = { left: { style: 'medium' } };
+                worksheet.getCell('R55').border = { right: { style: 'medium' } };
+
+                // Row 56
+                for (let col = 1; col <= 18; col++) {
+                    const colName = colNames[col - 1];
+                    const cell = worksheet.getCell(`${colName}56`);
+                    cell.font = { name: 'Arial', size: 10 };
+                }
+                worksheet.getCell('K56').alignment = { horizontal: 'center' };
+                worksheet.getCell('R56').font = { name: 'Arial', size: 10, bold: true };
+                worksheet.getCell('R56').alignment = { horizontal: 'left' };
+                worksheet.getCell('A56').border = { left: { style: 'medium' } };
+                worksheet.getCell('R56').border = { right: { style: 'medium' } };
+
+                // Save file in browser
+                const nombreArchivo = `horas_extras_${info.nombreArchivo}.xlsx`;
+                workbook.xlsx.writeBuffer().then(function(buffer) {
+                    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.download = nombreArchivo;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    mostrarToast('✅ Excel descargado correctamente');
                 });
 
-                const wb = XLSX.utils.book_new();
-                const ws = XLSX.utils.json_to_sheet(data);
-                XLSX.utils.book_append_sheet(wb, ws, 'Horas Extras');
-
-                // Ajustar ancho de columnas
-                const colWidths = [
-                    { wch: 14 }, // DÍA
-                    { wch: 8 }, // ENT.
-                    { wch: 8 }, // SAL.
-                    { wch: 8 }, // ENT.
-                    { wch: 8 }, // SAL.
-                    { wch: 8 }, // ENT.
-                    { wch: 8 }, // SAL.
-                    { wch: 8 }, // ENT.
-                    { wch: 8 }, // SAL.
-                    { wch: 12 }, // TPO. PERM.
-                    { wch: 12 }, // HORAS PERM.
-                    { wch: 10 }, // Total
-                    { wch: 10 }, // Norm.
-                    { wch: 10 }, // Extras
-                    { wch: 40 }, // MOTIVO
-                ];
-                ws['!cols'] = colWidths;
-
-                const info = getPeriodoInfo(mesSeleccionado, añoSeleccionado);
-                const nombreArchivo = `horas_extras_${info.nombreArchivo}.xlsx`;
-                XLSX.writeFile(wb, nombreArchivo);
-                mostrarToast('✅ Excel descargado correctamente');
             } catch (e) {
                 console.error('Error al exportar:', e);
                 mostrarToast('❌ Error al exportar: ' + e.message);
