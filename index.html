@@ -1,2418 +1,305 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="light">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes" />
-    <title>Registro Horas Extras</title>
-    <!-- Load Firebase SDK (compat version for easy browser load) -->
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
-    <style>
-        * {
-            box-sizing: border-box;
-            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-            margin: 0;
-            padding: 0;
-        }
-        body {
-            background: #f1f5f9;
-            padding: 12px 10px 30px;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .container {
-            max-width: 520px;
-            width: 100%;
-        }
-        h1 {
-            font-size: 1.4rem;
-            color: #0f172a;
-            margin-bottom: 0px;
-        }
-        .sub {
-            color: #64748b;
-            font-size: 0.8rem;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 6px;
-        }
-        .card {
-            background: white;
-            border-radius: 16px;
-            padding: 14px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-            margin-bottom: 12px;
-        }
-        .card-title {
-            font-weight: 600;
-            color: #0f172a;
-            font-size: 0.95rem;
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .badge {
-            background: #e2e8f0;
-            padding: 2px 10px;
-            border-radius: 30px;
-            font-size: 0.65rem;
-            color: #334155;
-        }
-        .badge-semana {
-            background: #dbeafe;
-            color: #1d4ed8;
-            padding: 0 8px;
-            border-radius: 30px;
-            font-size: 0.6rem;
-            font-weight: 600;
-        }
-        .badge-domingo {
-            background: #fef3c7;
-            color: #b45309;
-            padding: 0 8px;
-            border-radius: 30px;
-            font-size: 0.55rem;
-            font-weight: 600;
-        }
-        .badge-sabado {
-            background: #dbeafe;
-            color: #1d4ed8;
-            padding: 0 8px;
-            border-radius: 30px;
-            font-size: 0.55rem;
-            font-weight: 600;
-        }
-        .badge-feriado {
-            background: #fee2e2;
-            color: #b91c1c;
-            padding: 0 8px;
-            border-radius: 30px;
-            font-size: 0.55rem;
-            font-weight: 600;
-        }
-        .row {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 8px;
-            flex-wrap: wrap;
-        }
-        .row>* {
-            flex: 1;
-            min-width: 70px;
-        }
-        label {
-            font-size: 0.7rem;
-            font-weight: 500;
-            color: #334155;
-            display: block;
-            margin-bottom: 2px;
-        }
-        input,
-        select,
-        textarea {
-            width: 100%;
-            padding: 8px 10px;
-            border: 1px solid #d1d5db;
-            border-radius: 10px;
-            font-size: 0.9rem;
-            background: #fafbfc;
-        }
-        input:focus,
-        select:focus,
-        textarea:focus {
-            border-color: #3b82f6;
-            outline: none;
-            background: white;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
-        }
-        input[type="date"] {
-            padding: 6px 8px;
-            font-size: 0.85rem;
-        }
-        input[type="time"] {
-            padding: 6px 8px;
-        }
-        input[type="checkbox"] {
-            width: auto;
-            margin-right: 4px;
-            transform: scale(1.1);
-        }
-        textarea {
-            resize: vertical;
-            min-height: 34px;
-            font-size: 0.8rem;
-        }
-        .btn {
-            background: #3b82f6;
-            color: white;
-            border: none;
-            border-radius: 40px;
-            padding: 10px 16px;
-            font-weight: 600;
-            font-size: 0.9rem;
-            width: 100%;
-            cursor: pointer;
-            transition: 0.15s;
-        }
-        .btn:active {
-            transform: scale(0.97);
-            background: #2563eb;
-        }
-        .btn-sec {
-            background: #e2e8f0;
-            color: #1e293b;
-        }
-        .btn-sec:active {
-            background: #cbd5e1;
-        }
-        .btn-success {
-            background: #22c55e;
-            color: white;
-        }
-        .btn-success:active {
-            background: #16a34a;
-        }
-        .btn-danger {
-            background: #ef4444;
-        }
-        .btn-danger:active {
-            background: #dc2626;
-        }
-        .btn-sm {
-            padding: 6px 12px;
-            font-size: 0.75rem;
-            width: auto;
-            display: inline-block;
-        }
-        .btn-xs {
-            padding: 2px 8px;
-            font-size: 0.65rem;
-            width: auto;
-            border-radius: 30px;
-            border: none;
-            cursor: pointer;
-            background: #fee2e2;
-            color: #b91c1c;
-        }
-        .btn-xs:active {
-            background: #fecaca;
-        }
-        .flex {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
-        }
-        .flex .btn {
-            flex: 1;
-        }
-        .totales {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 6px;
-        }
-        .totales .item {
-            background: #f1f5f9;
-            border-radius: 12px;
-            padding: 10px 4px;
-            text-align: center;
-        }
-        .totales .item .num {
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: #0f172a;
-        }
-        .totales .item .num.extra {
-            color: #b45309;
-        }
-        .totales .item .label {
-            font-size: 0.6rem;
-            color: #64748b;
-            text-transform: uppercase;
-        }
-        .tabla-horarios {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.7rem;
-        }
-        .tabla-horarios th {
-            background: #f1f5f9;
-            padding: 4px 3px;
-            text-align: center;
-            font-weight: 600;
-            color: #475569;
-            border-bottom: 2px solid #d1d5db;
-            font-size: 0.6rem;
-            white-space: nowrap;
-        }
-        .tabla-horarios td {
-            padding: 5px 3px;
-            text-align: center;
-            border-bottom: 1px solid #eef2f6;
-            vertical-align: middle;
-            font-size: 0.7rem;
-        }
-        .tabla-horarios .extra {
-            color: #b45309;
-            font-weight: 600;
-        }
-        .tabla-horarios .domingo {
-            background: #fef3c7;
-        }
-        .tabla-horarios .feriado {
-            background: #fee2e2;
-        }
-        .tabla-horarios .sabado {
-            background: #eff6ff;
-        }
-        .tabla-horarios .registrado {
-            font-weight: 600;
-        }
-        .horario-preview {
-            background: #f1f5f9;
-            border-radius: 12px;
-            padding: 8px 12px;
-            margin-top: 8px;
-            font-size: 0.8rem;
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .horario-preview .extras {
-            color: #b45309;
-            font-weight: 600;
-        }
-        .checkbox-row {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            padding: 2px 0;
-        }
-        .checkbox-row label {
-            margin: 0;
-            font-size: 0.8rem;
-            font-weight: 400;
-        }
-        .mt-1 {
-            margin-top: 6px;
-        }
-        .mt-2 {
-            margin-top: 10px;
-        }
-        .mb-1 {
-            margin-bottom: 4px;
-        }
-        .text-center {
-            text-align: center;
-        }
-        .text-muted {
-            color: #64748b;
-            font-size: 0.7rem;
-        }
-        .sep {
-            height: 1px;
-            background: #e2e8f0;
-            margin: 10px 0;
-        }
-        .scroll-h {
-            overflow-x: auto;
-        }
-        .empty {
-            color: #94a3b8;
-            text-align: center;
-            padding: 16px 0;
-            font-size: 0.8rem;
-        }
-        .motivo-cell {
-            font-size: 0.6rem;
-            color: #64748b;
-            max-width: 80px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .horario-cell {
-            font-size: 0.65rem;
-            font-weight: 500;
-            color: #0f172a;
-            white-space: nowrap;
-        }
-        .corrido-badge {
-            background: #e0f2fe;
-            color: #0369a1;
-            font-size: 0.55rem;
-            padding: 0 6px;
-            border-radius: 30px;
-            margin-left: 2px;
-        }
-        .campo-manual {
-            background: #fef9c3;
-            border-color: #eab308;
-        }
-        .campo-manual:focus {
-            border-color: #ca8a04;
-            box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.15);
-        }
-        .label-manual {
-            color: #854d0e;
-            font-weight: 600;
-        }
-        .oculto {
-            display: none !important;
-        }
-        .sabado-fijo {
-            background: #dbeafe;
-            padding: 6px 10px;
-            border-radius: 10px;
-            font-size: 0.75rem;
-            color: #1d4ed8;
-            text-align: center;
-        }
-        .toast {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #0f172a;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 30px;
-            font-size: 0.8rem;
-            z-index: 999;
-            opacity: 0;
-            transition: opacity 0.3s;
-            pointer-events: none;
-            max-width: 90%;
-            text-align: center;
-        }
-        .toast.show {
-            opacity: 1;
-        }
-        .selector-mes {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            margin-bottom: 6px;
-        }
-        .selector-mes select {
-            flex: 2;
-            padding: 8px 10px;
-            border-radius: 10px;
-            border: 1px solid #d1d5db;
-            font-size: 0.9rem;
-            background: white;
-        }
-        .selector-mes .periodo-badge {
-            background: #e2e8f0;
-            padding: 4px 14px;
-            border-radius: 30px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            color: #334155;
-            white-space: nowrap;
-        }
-        .tabla-base {
-            font-size: 0.65rem;
-            color: #475569;
-            background: #f8fafc;
-            padding: 8px 10px;
-            border-radius: 10px;
-            margin-bottom: 6px;
-            line-height: 1.5;
-        }
-        .tabla-base span {
-            display: inline-block;
-            background: #e2e8f0;
-            padding: 0 6px;
-            border-radius: 4px;
-            margin: 0 2px;
-        }
-        .total-registros {
-            font-size: 0.65rem;
-            color: #64748b;
-            margin-top: 4px;
-        }
-        .checkbox-feriado {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 4px 0;
-        }
-        .checkbox-feriado label {
-            margin: 0;
-            font-size: 0.8rem;
-            font-weight: 400;
-        }
-        .checkbox-feriado input[type="checkbox"] {
-            width: auto;
-            transform: scale(1.1);
-        }
-        .guardado-ok {
-            background: #dcfce7;
-            color: #166534;
-            padding: 2px 8px;
-            border-radius: 30px;
-            font-size: 0.55rem;
-            font-weight: 600;
-        }
-        .sync-badge {
-            background: #e2e8f0;
-            color: #475569;
-            padding: 2px 8px;
-            border-radius: 30px;
-            font-size: 0.65rem;
-            font-weight: 600;
-            display: inline-block;
-        }
-        .sync-badge.online {
-            background: #dcfce7;
-            color: #166534;
-        }
-        .sync-badge.syncing {
-            background: #fef9c3;
-            color: #854d0e;
-        }
-        .sync-badge.offline {
-            background: #fee2e2;
-            color: #b91c1c;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Control de Horas Extras - EMELNOR</title>
+  <link rel="stylesheet" href="style.css?v=1.0.5">
+  <!-- Load ExcelJS local script -->
+  <script src="exceljs.min.js"></script>
+  <!-- Load Firebase SDK (compat version for easy browser load) -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics-compat.js"></script>
 </head>
 <body>
-    <div class="container">
-        <h1>⏱️ Horas Extras</h1>
-        <p class="sub">
-            <span>Marco — <span id="periodoLabel">16/mayo → 16/junio</span></span>
-            <span id="syncBadge" class="sync-badge">Conectando...</span>
-        </p>
+  <div class="app-container">
+    <!-- Sidebar: Settings & Personal Info -->
+    <aside class="sidebar">
+      <h2>
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+        </svg>
+        Configuración
+      </h2>
+      
+      <!-- Personal Details Card -->
+      <div class="form-group">
+        <label for="employee-name">Funcionario(a)</label>
+        <input type="text" id="employee-name" class="form-input" placeholder="Nombre completo" value="MARCO GARRIDO">
+      </div>
+      <div class="form-group">
+        <label for="employee-role">Cargo</label>
+        <input type="text" id="employee-role" class="form-input" placeholder="Ej. Ingeniero de Sistemas">
+      </div>
+      <div class="form-group">
+        <label for="employee-area">Área</label>
+        <input type="text" id="employee-area" class="form-input" placeholder="Ej. Sistemas" value="Sistemas">
+      </div>
+      <div class="form-group">
+        <label for="employee-card">N° Tarjeta / Rut</label>
+        <input type="text" id="employee-card" class="form-input" placeholder="Ej. 1234">
+      </div>
+      <div class="form-group">
+        <label for="employee-manager">Jefe directo</label>
+        <input type="text" id="employee-manager" class="form-input" placeholder="Nombre jefe directo" value="Carlos Rodriguez">
+      </div>
+      
+      <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 0.5rem 0;">
+      
+      <!-- Actions -->
+      <div class="btn-group-vertical">
+        <button id="btn-export-excel" class="btn btn-primary">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+          </svg>
+          Exportar a Excel
+        </button>
+        <button id="btn-export-backup" class="btn btn-secondary">
+          Exportar Respaldo (JSON)
+        </button>
+        <button id="btn-import-backup" class="btn btn-secondary">
+          Importar Respaldo (JSON)
+        </button>
+        <input type="file" id="file-import" style="display: none;" accept=".json">
+        <button id="btn-clear-data" class="btn btn-danger">
+          Limpiar Datos
+        </button>
+      </div>
+      
+      <div id="status-message" class="status-msg" style="display: none;"></div>
+    </aside>
 
-        <div class="card" style="background:#f8fafc;">
-            <div style="font-size:0.7rem; font-weight:600; color:#334155; margin-bottom:4px;">📋 Horario base (42 hrs/semana)</div>
-            <div class="tabla-base">
-                <span>Lun</span> 9:30→13:30 · 15:00→19:30 <span>8.5</span> ·
-                <span>Mar</span> 9:30→13:30 · 15:00→18:30 <span>7.5</span> ·
-                <span>Mié</span> 9:30→13:30 · 15:00→18:30 <span>7.5</span> ·
-                <span>Jue</span> 9:30→13:30 · 15:00→19:00 <span>8.0</span> ·
-                <span>Vie</span> 9:30→13:30 · 15:00→19:00 <span>8.0</span> ·
-                <span>Sáb</span> 10:00→12:30 <span>2.5</span> ·
-                <span>Dom</span> 0 <span>0.0</span>
-            </div>
+    <!-- Main Panel: Table & Calculations -->
+    <main class="main-panel">
+      <header class="panel-header">
+        <h1>Convenio y Control de Horas Extraordinarias</h1>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <div id="sync-status" class="sync-indicator offline" title="Estado de sincronización con la nube">
+            <span class="dot"></span> <span class="label">Conectando...</span>
+          </div>
+          <button id="theme-toggle" class="theme-toggle-btn" title="Cambiar Tema">
+            🌙
+          </button>
+          <button id="sidebar-toggle" class="theme-toggle-btn" title="Configuración" style="font-size: 1.1rem; line-height: 1;">
+            ⚙️
+          </button>
         </div>
+      </header>
 
-        <div class="card">
-            <div class="card-title">
-                <span>📅 Período</span>
-                <span class="badge" id="periodoBadge">16 → 16</span>
+      <!-- Period Selector Card -->
+      <section class="period-selector-card card" style="padding: 1rem; margin-bottom: 0.25rem;">
+        <div style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between;">
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem;">
+            <div style="display: flex; align-items: center; gap: 0.35rem;">
+              <label for="period-month" style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Mes:</label>
+              <select id="period-month" style="width: auto; padding: 0.35rem 0.5rem;">
+                <option value="0">Enero</option>
+                <option value="1">Febrero</option>
+                <option value="2">Marzo</option>
+                <option value="3">Abril</option>
+                <option value="4" selected>Mayo</option>
+                <option value="5">Junio</option>
+                <option value="6">Julio</option>
+                <option value="7">Agosto</option>
+                <option value="8">Septiembre</option>
+                <option value="9">Octubre</option>
+                <option value="10">Noviembre</option>
+                <option value="11">Diciembre</option>
+              </select>
             </div>
-            <div class="selector-mes">
-                <select id="selectorMes"></select>
-                <span class="periodo-badge" id="periodoSelectLabel">16/mayo → 16/junio</span>
-            </div>
-            <div style="font-size:0.65rem; color:#64748b; margin-top:4px;">
-                📌 Selecciona el mes de FINALIZACIÓN (ej: junio = 16/mayo → 16/junio)
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-title">
-                <span>📋 Registrar día</span>
-                <span class="badge" id="diaSemana">—</span>
-            </div>
-
-            <div class="row">
-                <div>
-                    <label>📅 Fecha</label>
-                    <input type="date" id="fecha" />
-                </div>
-                <div id="campoHoraFinal">
-                    <label>⏱️ Hora final</label>
-                    <input type="time" id="horaFinal" value="19:00" />
-                </div>
-            </div>
-
-            <div class="checkbox-feriado">
-                <input type="checkbox" id="esFeriado" />
-                <label for="esFeriado">📅 Marcar como feriado (fondo rojo)</label>
-            </div>
-
-            <div id="sabadoFijo" class="oculto sabado-fijo">
-                <div class="row" style="margin-top:4px;">
-                    <div>
-                        <label>🟦 Entrada (fija)</label>
-                        <input type="time" id="sabadoEntrada" value="10:00" disabled style="background:#e2e8f0;" />
-                    </div>
-                    <div>
-                        <label>🟦 Salida (modificable)</label>
-                        <input type="time" id="sabadoSalida" value="12:30" class="campo-manual" />
-                    </div>
-                </div>
-                <div style="font-size:0.65rem; color:#1d4ed8; margin-top:2px;">Sábado: entrada fija 10:00, salida ajustable</div>
-            </div>
-
-            <div id="camposManuales" class="oculto">
-                <div class="row">
-                    <div>
-                        <label class="label-manual">🟡 Hora entrada</label>
-                        <input type="time" id="horaEntradaManual" class="campo-manual" value="09:30" />
-                    </div>
-                    <div>
-                        <label class="label-manual">🟡 Hora salida</label>
-                        <input type="time" id="horaSalidaManual" class="campo-manual" value="15:30" />
-                    </div>
-                </div>
-                <div style="font-size:0.7rem; color:#854d0e; background:#fef9c3; padding:4px 10px; border-radius:8px; margin-bottom:6px;">
-                    ⚠️ Domingo/Feriado: ingresa entrada y salida manual (sin almuerzo)
-                </div>
-            </div>
-
-            <div class="checkbox-row" id="rowCorrido">
-                <input type="checkbox" id="corrido" />
-                <label for="corrido">🔁 Jornada corrida (sin almuerzo)</label>
-            </div>
-
-            <div style="font-size:0.75rem; color:#475569; background:#f8fafc; padding:6px 10px; border-radius:10px;">
-                <span id="horarioTexto">09:30 → 13:30 · 15:00 → 19:30</span>
-            </div>
-
-            <div class="row mt-1">
-                <div style="flex:2;">
-                    <label>📝 Motivo</label>
-                    <textarea id="motivo" placeholder="Ej: asistiendo usuario problema conexión"></textarea>
-                </div>
-            </div>
-
-            <div class="flex">
-                <button class="btn" id="btnGuardar">✅ Guardar</button>
-                <button class="btn btn-sec" id="btnLimpiarForm">🗑️ Limpiar</button>
-            </div>
-
-            <div class="horario-preview">
-                <span>Total: <span id="prevTotal">8.0</span> hrs</span>
-                <span>Normales: <span id="prevNormales">8.0</span> hrs</span>
-                <span class="extras">Extras: <span id="prevExtras">0.0</span> hrs</span>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-title">
-                <span>📊 Días registrados</span>
-                <span class="badge" id="totalDias">0</span>
-            </div>
-            <div style="font-size:0.6rem; color:#94a3b8; margin-bottom:6px;">
-                Mostrando período: <span id="filtroPeriodoLabel">16/mayo → 16/junio</span>
-            </div>
-            <div class="scroll-h">
-                <table class="tabla-horarios" id="tablaDias">
-                    <thead>
-                        <tr>
-                            <th>Día</th>
-                            <th>Sem</th>
-                            <th>Horario</th>
-                            <th>Total</th>
-                            <th>Extra</th>
-                            <th>Motivo</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody id="tablaBody">
-                        <tr>
-                            <td colspan="7" class="empty">Sin registros</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-title">
-                <span>📊 Resumen</span>
-                <span class="badge" id="resumenPeriodo">16/mayo → 16/junio</span>
-            </div>
-            <div class="totales">
-                <div class="item">
-                    <div class="num" id="sumTotal">0.0</div>
-                    <div class="label">Total hrs</div>
-                </div>
-                <div class="item">
-                    <div class="num" id="sumNormales">0.0</div>
-                    <div class="label">Normales</div>
-                </div>
-                <div class="item">
-                    <div class="num extra" id="sumExtras">0.0</div>
-                    <div class="label">Extras</div>
-                </div>
-            </div>
-            <div style="margin-top:6px; font-size:0.65rem; color:#64748b; text-align:center;" id="resumenSemana">
-                Semana 1: 0.0 · Semana 2: 0.0 · Semana 3: 0.0 · Semana 4: 0.0 · Semana 5: 0.0
-            </div>
-            <div class="total-registros" id="totalRegistrosLabel">Total registros: 0</div>
-        </div>
-
-        <div class="flex">
-            <button class="btn btn-success" id="btnExportarExcel">📊 Excel</button>
-            <button class="btn btn-danger btn-sm" id="btnBorrarTodo">🗑️ Todo</button>
-        </div>
-        <div style="margin-top:4px; font-size:0.6rem; color:#94a3b8; text-align:center;">
-            Los datos se guardan automáticamente en el celular
-        </div>
-    </div>
-
-    <div id="toast" class="toast"></div>
-
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-
-    <script>
-        // ---------- FIREBASE ----------
-        const firebaseConfig = {
-            apiKey: "AIzaSyCKO3c4WitANxhIC5Wc0IjXF8X8mi68nF8",
-            authDomain: "gestion-usuarios-equipos.firebaseapp.com",
-            databaseURL: "https://gestion-usuarios-equipos-default-rtdb.firebaseio.com",
-            projectId: "gestion-usuarios-equipos",
-            storageBucket: "gestion-usuarios-equipos.firebasestorage.app",
-            messagingSenderId: "124302724881",
-            appId: "1:124302724881:web:4a68cac2ae22d7b21c06b0",
-            measurementId: "G-3Q5DRB8DL5"
-        };
-
-        let db = null;
-        let isFirebaseInitialized = false;
-
-        try {
-            if (typeof firebase !== 'undefined') {
-                firebase.initializeApp(firebaseConfig);
-                db = firebase.database();
-                isFirebaseInitialized = true;
-            }
-        } catch (e) {
-            console.error("Firebase init failed:", e);
-        }
-
-        // ---------- CONFIG ----------
-        const BASE_HORARIOS = {
-            'Lunes': { e1: '09:30', s1: '13:30', e2: '15:00', s2: '19:30', base: 8.5 },
-            'Martes': { e1: '09:30', s1: '13:30', e2: '15:00', s2: '18:30', base: 7.5 },
-            'Miércoles': { e1: '09:30', s1: '13:30', e2: '15:00', s2: '18:30', base: 7.5 },
-            'Jueves': { e1: '09:30', s1: '13:30', e2: '15:00', s2: '19:00', base: 8.0 },
-            'Viernes': { e1: '09:30', s1: '13:30', e2: '15:00', s2: '19:00', base: 8.0 },
-            'Sábado': { e1: '10:00', s1: '12:30', e2: '12:30', s2: '12:30', base: 2.5 },
-            'Domingo': { e1: '', s1: '', e2: '', s2: '', base: 0.0 }
-        };
-
-        const FERIADOS = {
-            '2026-01-01': 'Año Nuevo',
-            '2026-04-03': 'Viernes Santo',
-            '2026-04-04': 'Sábado Santo',
-            '2026-05-01': 'Día del Trabajo',
-            '2026-05-21': 'Día de las Glorias Navales',
-            '2026-06-29': 'San Pedro y San Pablo',
-            '2026-07-16': 'Día de la Virgen del Carmen',
-            '2026-08-15': 'Asunción de la Virgen',
-            '2026-09-18': 'Independencia Nacional',
-            '2026-09-19': 'Día de las Glorias del Ejército',
-            '2026-10-12': 'Día del Encuentro de Dos Mundos',
-            '2026-10-31': 'Día de las Iglesias Evangélicas',
-            '2026-11-01': 'Día de Todos los Santos',
-            '2026-12-08': 'Inmaculada Concepción',
-            '2026-12-25': 'Navidad'
-        };
-
-        const SABADO_ENTRADA = '10:00';
-        const HORA_SALIDA2_BASE = '19:00';
-
-        let registros = [];
-        let mesSeleccionado = 0;
-        let añoSeleccionado = 2026;
-
-        // ---------- ELEMENTOS ----------
-        const $ = id => document.getElementById(id);
-        const fecha = $('fecha');
-        const horaFinal = $('horaFinal');
-        const corrido = $('corrido');
-        const motivo = $('motivo');
-        const esFeriado = $('esFeriado');
-        const horarioTexto = $('horarioTexto');
-        const prevTotal = $('prevTotal'),
-            prevNormales = $('prevNormales'),
-            prevExtras = $('prevExtras');
-        const tablaBody = $('tablaBody');
-        const sumTotal = $('sumTotal'),
-            sumNormales = $('sumNormales'),
-            sumExtras = $('sumExtras');
-        const totalDias = $('totalDias');
-        const resumenPeriodo = $('resumenPeriodo');
-        const resumenSemana = $('resumenSemana');
-        const totalRegistrosLabel = $('totalRegistrosLabel');
-        const periodoLabel = $('periodoLabel');
-        const periodoBadge = $('periodoBadge');
-        const periodoSelectLabel = $('periodoSelectLabel');
-        const filtroPeriodoLabel = $('filtroPeriodoLabel');
-        const diaSemana = $('diaSemana');
-        const selectorMes = $('selectorMes');
-        const btnGuardar = $('btnGuardar'),
-            btnLimpiarForm = $('btnLimpiarForm');
-        const btnBorrarTodo = $('btnBorrarTodo'),
-            btnExportarExcel = $('btnExportarExcel');
-        const campoHoraFinal = $('campoHoraFinal');
-        const camposManuales = $('camposManuales');
-        const sabadoFijo = $('sabadoFijo');
-        const horaEntradaManual = $('horaEntradaManual');
-        const horaSalidaManual = $('horaSalidaManual');
-        const sabadoSalida = $('sabadoSalida');
-        const rowCorrido = $('rowCorrido');
-        const toast = $('toast');
-        const syncBadge = $('syncBadge');
-
-        // ---------- SYNCHRONIZATION BADGE ----------
-        function setSyncState(state) {
-            if (!syncBadge) return;
-            syncBadge.className = `sync-badge ${state}`;
-            if (state === 'online') {
-                syncBadge.textContent = 'Sincronizado';
-            } else if (state === 'syncing') {
-                syncBadge.textContent = 'Sincronizando...';
-            } else {
-                syncBadge.textContent = 'Sin conexión';
-            }
-        }
-
-        // ---------- FUNCIONES AUXILIARES ----------
-        function timeToMin(t) {
-            if (!t) return 0;
-            const p = t.split(':');
-            return parseInt(p[0]) * 60 + parseInt(p[1]);
-        }
-
-        function minToHrs(m) { return m / 60; }
-
-        const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre',
-            'noviembre', 'diciembre'
-        ];
-        const MESES_CORTO = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-
-        function getDiaSemanaReal(fechaStr) {
-            if (!fechaStr) return '—';
-            const d = new Date(fechaStr + 'T00:00:00');
-            const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-            return dias[d.getDay()];
-        }
-
-        function getSemana(diaNum, mes, año) {
-            const fecha = new Date(año, mes, diaNum);
-            const diaDelMes = fecha.getDate();
-            if (diaDelMes >= 16 && diaDelMes <= 22) return 1;
-            if (diaDelMes >= 23 && diaDelMes <= 29) return 2;
-            if (diaDelMes >= 30 && diaDelMes <= 31) return 3;
-            if (diaDelMes >= 1 && diaDelMes <= 5) return 3;
-            if (diaDelMes >= 6 && diaDelMes <= 12) return 4;
-            if (diaDelMes >= 13 && diaDelMes <= 16) return 5;
-            return 1;
-        }
-
-        function esDomingo(fechaStr) {
-            return getDiaSemanaReal(fechaStr) === 'Domingo';
-        }
-
-        function esSabado(fechaStr) {
-            return getDiaSemanaReal(fechaStr) === 'Sábado';
-        }
-
-        function esFeriadoReal(fechaStr) {
-            if (!fechaStr) return false;
-            return FERIADOS[fechaStr] !== undefined;
-        }
-
-        function getHorarioBase(diaNombre) {
-            return BASE_HORARIOS[diaNombre] || BASE_HORARIOS['Lunes'];
-        }
-
-        function getPeriodoInfo(mesFin, año) {
-            const mesInicio = mesFin - 1 < 0 ? 11 : mesFin - 1;
-            const añoInicio = mesFin - 1 < 0 ? año - 1 : año;
-            return {
-                mesInicio,
-                mesFin,
-                añoInicio,
-                añoFin: año,
-                label: `16/${MESES_CORTO[mesInicio]} → 16/${MESES_CORTO[mesFin]}`,
-                nombreArchivo: `${MESES_CORTO[mesInicio]}_${añoInicio}_a_${MESES_CORTO[mesFin]}_${año}`
-            };
-        }
-
-        function getFechaInicioPeriodo(mesFin, año) {
-            const mesInicio = mesFin - 1 < 0 ? 11 : mesFin - 1;
-            const añoInicio = mesFin - 1 < 0 ? año - 1 : año;
-            return new Date(añoInicio, mesInicio, 16);
-        }
-
-        function getFechaFinPeriodo(mesFin, año) {
-            return new Date(año, mesFin, 16);
-        }
-
-        function estaEnPeriodo(fechaStr, mesFin, año) {
-            if (!fechaStr) return false;
-            const d = new Date(fechaStr + 'T00:00:00');
-            const inicio = getFechaInicioPeriodo(mesFin, año);
-            const fin = getFechaFinPeriodo(mesFin, año);
-            return d >= inicio && d <= fin;
-        }
-
-        function getRegistrosFiltrados() {
-            return registros.filter(r => {
-                return estaEnPeriodo(r.fecha, mesSeleccionado, añoSeleccionado);
-            });
-        }
-
-        function getDiasDelPeriodo() {
-            const inicio = getFechaInicioPeriodo(mesSeleccionado, añoSeleccionado);
-            const fin = getFechaFinPeriodo(mesSeleccionado, añoSeleccionado);
-            const dias = [];
-            const current = new Date(inicio);
-            while (current <= fin) {
-                const fechaStr = current.toISOString().split('T')[0];
-                dias.push(fechaStr);
-                current.setDate(current.getDate() + 1);
-            }
-            return dias;
-        }
-
-        // ---------- AUTO-SELECCIÓN DE PERÍODO ----------
-        function getPeriodoForFecha(fechaStr) {
-            if (!fechaStr) return null;
-            const d = new Date(fechaStr + 'T00:00:00');
-            const day = d.getDate();
-            const month = d.getMonth(); // 0-11
-            const year = d.getFullYear();
             
-            let mesFin, añoFin;
-            if (day > 16) {
-                mesFin = month + 1;
-                añoFin = year;
-                if (mesFin > 11) {
-                    mesFin = 0;
-                    añoFin++;
-                }
-            } else {
-                mesFin = month;
-                añoFin = year;
-            }
-            return { mes: mesFin, año: añoFin };
-        }
+            <div style="display: flex; align-items: center; gap: 0.35rem;">
+              <label for="period-year" style="font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase;">Año:</label>
+              <select id="period-year" style="width: auto; padding: 0.35rem 0.5rem;">
+                <option value="2025">2025</option>
+                <option value="2026" selected>2026</option>
+                <option value="2027">2027</option>
+              </select>
+            </div>
 
-        // ---------- CÁLCULO DE HORAS ----------
-        function calcularHoras(fechaStr, esCorrido, horaFinalStr, esFeriadoFlag, entradaManual, salidaManual, salidaSabado) {
-            if (!fechaStr) {
-                return { e1: '09:30', s1: '13:30', e2: '15:00', s2: '19:30', total: 8.5, normales: 8.5, extras: 0,
-                    esCorrido: false, esManual: false };
-            }
+            <div class="checkbox-group" style="margin-left: 0.5rem;">
+              <input type="checkbox" id="complete-week" checked>
+              <label for="complete-week" style="font-size: 0.8rem; font-weight: 600;">Extender mes al domingo</label>
+            </div>
+          </div>
+          
+          <div style="font-size: 0.8rem; font-weight: 700; color: var(--primary-color); display: flex; align-items: center; gap: 0.25rem;">
+            <span>Período:</span>
+            <span id="date-range-display">Cargando...</span>
+          </div>
+        </div>
+      </section>
 
-            const diaNombre = getDiaSemanaReal(fechaStr);
-            const esDom = diaNombre === 'Domingo';
-            const esSab = diaNombre === 'Sábado';
-            const esFer = esFeriadoFlag || esFeriadoReal(fechaStr);
+      <!-- Totals Metrics Cards -->
+      <section class="totals-grid">
+        <div class="total-card primary">
+          <span class="label">Horas Trabajadas</span>
+          <span id="metric-total-worked" class="value">0.00</span>
+        </div>
+        <div class="total-card accent-1">
+          <span class="label">Horas Normales</span>
+          <span id="metric-normal" class="value">0.00</span>
+        </div>
+        <div class="total-card accent-2">
+          <span class="label">Total Horas Extras</span>
+          <span id="metric-extras" class="value">0.00</span>
+        </div>
+        <div class="total-card accent-1">
+          <span class="label">Extras al 50%</span>
+          <span id="metric-extras-50" class="value">0.00</span>
+        </div>
+        <div class="total-card accent-3">
+          <span class="label">Extras al 100% (Dom/Fer)</span>
+          <span id="metric-extras-100" class="value">0.00</span>
+        </div>
+      </section>
 
-            // DOMINGO o FERIADO: manual
-            if (esDom || esFer) {
-                const entrada = entradaManual || '';
-                const salida = salidaManual || '';
-                if (!entrada || !salida) {
-                    return { e1: '', s1: '', e2: '', s2: '', total: 0, normales: 0, extras: 0, esCorrido: true,
-                        esManual: true };
-                }
-                const totalMin = timeToMin(salida) - timeToMin(entrada);
-                const total = totalMin > 0 ? minToHrs(totalMin) : 0;
-                return { e1: entrada, s1: salida, e2: salida, s2: salida, total: total, normales: 0, extras: total,
-                    esCorrido: true, esManual: true };
-            }
+      <!-- Form Content Panel -->
+      <div id="panel-form-content" class="form-panel-section">
+        <div class="card" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem;">
+          
+          <!-- Row 1: Day & Exit Time (Hora Final) -->
+          <div class="form-row-2col">
+            <div class="form-group">
+              <label for="form-day-select">Seleccionar Día del Período</label>
+              <select id="form-day-select">
+                <!-- Dynamically populated options -->
+              </select>
+              <!-- Full Date Display -->
+              <div id="form-full-date-display" style="font-size: 0.85rem; font-weight: 600; color: var(--primary-color); margin-top: 0.35rem;"></div>
+            </div>
+            <div class="form-group">
+              <label for="form-sal-time" style="font-weight: 700;">Hora Final (Salida)</label>
+              <input type="text" id="form-sal-time" class="form-input form-time-input" placeholder="19:00" maxlength="5">
+            </div>
+          </div>
 
-            // SÁBADO: entrada fija, salida modificable
-            if (esSab) {
-                const entrada = SABADO_ENTRADA;
-                const salida = salidaSabado || '12:30';
-                const totalMin = timeToMin(salida) - timeToMin(entrada);
-                const total = totalMin > 0 ? minToHrs(totalMin) : 0;
-                const base = BASE_HORARIOS['Sábado'].base;
-                const extras = total > base ? total - base : 0;
-                const normales = total - extras;
-                return { e1: entrada, s1: salida, e2: salida, s2: salida, total: total, normales: normales,
-                    extras: extras, esCorrido: true, esManual: false };
-            }
-
-            // LUNES A VIERNES
-            const base = getHorarioBase(diaNombre);
-            const final = horaFinalStr || HORA_SALIDA2_BASE;
-
-            let e1, s1, e2, s2;
-            if (esCorrido) {
-                e1 = base.e1;
-                s1 = base.s1;
-                e2 = base.s1;
-                s2 = final;
-            } else {
-                e1 = base.e1;
-                s1 = base.s1;
-                e2 = base.e2;
-                s2 = final;
-            }
-
-            const b1 = timeToMin(s1) - timeToMin(e1);
-            const b2 = timeToMin(s2) - timeToMin(e2);
-            let totalMin = b1 + b2;
-            if (totalMin < 0) totalMin = 0;
-            const total = minToHrs(totalMin);
-
-            const baseMin = base.base * 60;
-            const extraMin = totalMin > baseMin ? totalMin - baseMin : 0;
-            const extras = minToHrs(extraMin);
-            const normales = total - extras;
-
-            return { e1, s1, e2, s2, total, normales, extras, esCorrido, esManual: false };
-        }
-
-        function obtenerDiaDesdeFecha(fechaStr) {
-            if (!fechaStr) return 16;
-            const d = new Date(fechaStr + 'T00:00:00');
-            return d.getDate();
-        }
-
-        function obtenerMesDesdeFecha(fechaStr) {
-            if (!fechaStr) return 2;
-            const d = new Date(fechaStr + 'T00:00:00');
-            return d.getMonth();
-        }
-
-        function obtenerAnioDesdeFecha(fechaStr) {
-            if (!fechaStr) return 2026;
-            const d = new Date(fechaStr + 'T00:00:00');
-            return d.getFullYear();
-        }
-
-        function actualizarPreview() {
-            const fechaStr = fecha.value;
-            if (!fechaStr) {
-                diaSemana.textContent = '—';
-                return;
-            }
-
-            const diaNombre = getDiaSemanaReal(fechaStr);
-            const esDom = diaNombre === 'Domingo';
-            const esSab = diaNombre === 'Sábado';
-            const esFer = esFeriado.checked || esFeriadoReal(fechaStr);
-
-            if (esDom || esFer) {
-                camposManuales.classList.remove('oculto');
-                sabadoFijo.classList.add('oculto');
-                campoHoraFinal.classList.add('oculto');
-                rowCorrido.classList.add('oculto');
-            } else if (esSab) {
-                camposManuales.classList.add('oculto');
-                sabadoFijo.classList.remove('oculto');
-                campoHoraFinal.classList.add('oculto');
-                rowCorrido.classList.add('oculto');
-            } else {
-                camposManuales.classList.add('oculto');
-                sabadoFijo.classList.add('oculto');
-                campoHoraFinal.classList.remove('oculto');
-                rowCorrido.classList.remove('oculto');
-            }
-
-            const h = calcularHoras(
-                fechaStr,
-                corrido.checked,
-                horaFinal.value,
-                esFeriado.checked,
-                horaEntradaManual.value,
-                horaSalidaManual.value,
-                sabadoSalida.value
-            );
-
-            if (esDom || esFer) {
-                if (h.e1 && h.s1) {
-                    horarioTexto.textContent = `${h.e1} → ${h.s1} (${esDom ? 'domingo' : 'feriado'} - manual)`;
-                } else {
-                    horarioTexto.textContent = `${esDom ? 'Domingo' : 'Feriado'} (sin registrar)`;
-                }
-            } else if (esSab) {
-                horarioTexto.textContent = `${h.e1} → ${h.s1} (sábado)`;
-            } else if (h.esCorrido) {
-                const base = getHorarioBase(diaNombre);
-                horarioTexto.textContent = `${base.e1} → ${base.s1} · ${base.s1} → ${h.s2} (corrido)`;
-            } else {
-                const base = getHorarioBase(diaNombre);
-                horarioTexto.textContent = `${base.e1} → ${base.s1} · ${base.e2} → ${h.s2}`;
-            }
-
-            prevTotal.textContent = h.total.toFixed(1);
-            prevNormales.textContent = h.normales.toFixed(1);
-            prevExtras.textContent = h.extras.toFixed(1);
-
-            diaSemana.textContent = diaNombre + (esFer ? ' 🔴' : '');
-        }
-
-        // ✅ FUNCIÓN GUARDAR
-        function guardarDia() {
-            if (!fecha.value) {
-                mostrarToast('❌ Selecciona una fecha');
-                return;
-            }
-
-            const diaNum = obtenerDiaDesdeFecha(fecha.value);
-            if (diaNum < 1 || diaNum > 31) {
-                mostrarToast('❌ Día inválido');
-                return;
-            }
-
-            const mes = obtenerMesDesdeFecha(fecha.value);
-            const año = obtenerAnioDesdeFecha(fecha.value);
-            const diaNombre = getDiaSemanaReal(fecha.value);
-
-            const h = calcularHoras(
-                fecha.value,
-                corrido.checked,
-                horaFinal.value,
-                esFeriado.checked,
-                horaEntradaManual.value,
-                horaSalidaManual.value,
-                sabadoSalida.value
-            );
-
-            const registro = {
-                dia: diaNum,
-                fecha: fecha.value,
-                mes: mes,
-                año: año,
-                semana: getSemana(diaNum, mes, año),
-                e1: h.e1 || '',
-                s1: h.s1 || '',
-                e2: h.e2 || '',
-                s2: h.s2 || '',
-                total: h.total,
-                normales: h.normales,
-                extras: h.extras,
-                esCorrido: h.esCorrido || false,
-                esManual: h.esManual || false,
-                esDomingo: esDomingo(fecha.value),
-                esSabado: esSabado(fecha.value),
-                esFeriado: esFeriado.checked || esFeriadoReal(fecha.value),
-                motivo: motivo.value.trim() || '',
-                horaFinal: horaFinal.value,
-                entradaManual: horaEntradaManual.value,
-                salidaManual: horaSalidaManual.value,
-                sabadoSalida: sabadoSalida.value
-            };
-
-            const idx = registros.findIndex(r => r.dia === diaNum && r.mes === mes && r.año === año);
-
-            if (idx !== -1) {
-                registros[idx] = registro;
-                mostrarToast('✅ Día actualizado correctamente');
-            } else {
-                registros.push(registro);
-                mostrarToast('✅ Día guardado correctamente');
-            }
-
-            registros.sort((a, b) => {
-                if (a.año !== b.año) return a.año - b.año;
-                if (a.mes !== b.mes) return a.mes - b.mes;
-                return a.dia - b.dia;
-            });
-
-            guardarEnLocalStorage();
-            renderizar();
-            limpiarFormulario();
-        }
-
-        function limpiarFormulario() {
-            fecha.value = new Date().toISOString().split('T')[0];
-            horaFinal.value = '19:00';
-            corrido.checked = false;
-            motivo.value = '';
-            esFeriado.checked = false;
-            horaEntradaManual.value = '09:30';
-            horaSalidaManual.value = '15:30';
-            sabadoSalida.value = '12:30';
+          <!-- Toggles -->
+          <div class="form-toggles-container">
+            <div class="checkbox-group">
+              <input type="checkbox" id="form-is-feriado">
+              <label for="form-is-feriado" style="font-weight: 700; cursor: pointer;">🎈 Marcar como Día Feriado</label>
+            </div>
             
-            const period = getPeriodoForFecha(fecha.value);
-            if (period) {
-                const targetVal = `${period.mes}|${period.año}`;
-                let hasOption = false;
-                for (let i = 0; i < selectorMes.options.length; i++) {
-                    if (selectorMes.options[i].value === targetVal) {
-                        hasOption = true;
-                        break;
-                    }
-                }
-                if (hasOption && selectorMes.value !== targetVal) {
-                    selectorMes.value = targetVal;
-                    mesSeleccionado = period.mes;
-                    añoSeleccionado = period.año;
-                    actualizarPeriodoLabels();
-                    renderizar();
-                }
-            }
-            actualizarPreview();
-        }
-
-        function eliminarDia(diaNum, mes, año) {
-            if (confirm(`¿Eliminar el registro del día ${diaNum}/${mes+1}/${año}?`)) {
-                registros = registros.filter(r => !(r.dia === diaNum && r.mes === mes && r.año === año));
-                guardarEnLocalStorage();
-                renderizar();
-                mostrarToast('🗑️ Registro eliminado');
-            }
-        }
-
-        function guardarEnLocalStorage() {
-            try {
-                localStorage.setItem('horasExtras_registros', JSON.stringify(registros));
-                guardarEnFirebase();
-            } catch (e) {
-                console.warn('No se pudo guardar en localStorage:', e);
-            }
-        }
-
-        function cargarDeLocalStorage() {
-            try {
-                const data = localStorage.getItem('horasExtras_registros');
-                if (data) {
-                    registros = JSON.parse(data);
-                    registros.sort((a, b) => {
-                        if (a.año !== b.año) return a.año - b.año;
-                        if (a.mes !== b.mes) return a.mes - b.mes;
-                        return a.dia - b.dia;
-                    });
-                }
-            } catch (e) {
-                console.warn('No se pudo cargar de localStorage:', e);
-            }
-        }
-
-        // ---------- RENDERIZADO ----------
-        function renderizar() {
-            const diasDelPeriodo = getDiasDelPeriodo();
-            const registrosFiltrados = getRegistrosFiltrados();
-
-            const registroMap = {};
-            registrosFiltrados.forEach(r => {
-                registroMap[r.fecha] = r;
-            });
-
-            let totalHrs = 0,
-                normalesHrs = 0,
-                extrasHrs = 0;
-            const semanas = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-
-            let html = '';
-            diasDelPeriodo.forEach(fechaStr => {
-                const diaNum = obtenerDiaDesdeFecha(fechaStr);
-                const diaNombre = getDiaSemanaReal(fechaStr);
-                const esDom = diaNombre === 'Domingo';
-                const esSab = diaNombre === 'Sábado';
-                const esFer = esFeriadoReal(fechaStr);
-
-                let registro = registroMap[fechaStr];
-                let h;
-                let esRegistrado = false;
-
-                if (registro) {
-                    esRegistrado = true;
-                    h = {
-                        e1: registro.e1,
-                        s1: registro.s1,
-                        e2: registro.e2,
-                        s2: registro.s2,
-                        total: registro.total,
-                        normales: registro.normales,
-                        extras: registro.extras,
-                        esCorrido: registro.esCorrido,
-                        esManual: registro.esManual
-                    };
-                    totalHrs += registro.total;
-                    normalesHrs += registro.normales;
-                    extrasHrs += registro.extras;
-                    const s = registro.semana || 1;
-                    if (semanas[s] !== undefined) semanas[s] += registro.total;
-                } else {
-                    if (esDom || esFer) {
-                        h = { e1: '', s1: '', e2: '', s2: '', total: 0, normales: 0, extras: 0, esCorrido: false,
-                            esManual: true };
-                    } else if (esSab) {
-                        h = { e1: '10:00', s1: '12:30', e2: '12:30', s2: '12:30', total: 2.5, normales: 2.5,
-                            extras: 0, esCorrido: true, esManual: false };
-                    } else {
-                        const base = getHorarioBase(diaNombre);
-                        h = {
-                            e1: base.e1,
-                            s1: base.s1,
-                            e2: base.e2,
-                            s2: base.s2,
-                            total: base.base,
-                            normales: base.base,
-                            extras: 0,
-                            esCorrido: false,
-                            esManual: false
-                        };
-                    }
-                }
-
-                let cls = '';
-                let badge = '';
-                if (esDom) { cls = 'domingo';
-                    badge = `<span class="badge-domingo">D</span>`; }
-                if (esFer) { cls = 'feriado';
-                    badge = `<span class="badge-feriado">🔴</span>`; }
-                if (esSab && !esFer) { cls = 'sabado';
-                    badge = `<span class="badge-sabado">S</span>`; }
-
-                let horario;
-                if (esDom || esFer) {
-                    horario = h.e1 && h.s1 ? `${h.e1}→${h.s1}` : '—';
-                } else if (esSab) {
-                    horario = `${h.e1}→${h.s1}`;
-                } else if (h.esCorrido) {
-                    const base = getHorarioBase(diaNombre);
-                    horario = `${base.e1}→${base.s1} ${base.s1}→${h.s2}`;
-                } else {
-                    const base = getHorarioBase(diaNombre);
-                    horario = `${base.e1}→${base.s1} ${base.e2}→${h.s2}`;
-                }
-
-                const corridoTag = h.esCorrido && !esDom && !esSab ?
-                    `<span class="corrido-badge">corrido</span>` : '';
-
-                const extraStr = h.extras > 0 ? `+${h.extras.toFixed(1)}` : '-';
-                const extraClass = h.extras > 0 ? 'extra' : '';
-
-                const motivoStr = registro ? registro.motivo || '' : '';
-                const motivoShort = motivoStr.length > 15 ? motivoStr.substring(0, 15) + '…' : motivoStr;
-
-                const registradoTag = esRegistrado ?
-                    `<span class="guardado-ok">✓</span>` :
-                    '';
-
-                html += `
-                        <tr class="${cls}">
-                            <td><strong>${diaNum}</strong><br><span style="font-size:0.55rem;color:#94a3b8;">${diaNombre.substring(0,3)}</span> ${badge} ${registradoTag}</td>
-                            <td><span class="badge-semana">${getSemana(diaNum, mesSeleccionado, añoSeleccionado)}</span></td>
-                            <td class="horario-cell">${horario} ${corridoTag}</td>
-                            <td>${h.total.toFixed(1)}</td>
-                            <td class="${extraClass}">${extraStr}</td>
-                            <td class="motivo-cell" title="${motivoStr}">${motivoShort || '-'}</td>
-                            <td>
-                                ${esRegistrado ? `<button class="btn-xs" onclick="eliminarDia(${diaNum}, ${mesSeleccionado}, ${añoSeleccionado})">🗑️</button>` : ''}
-                            </td>
-                        </tr>
-                    `;
-            });
-
-            tablaBody.innerHTML = html;
-
-            sumTotal.textContent = totalHrs.toFixed(1);
-            sumNormales.textContent = normalesHrs.toFixed(1);
-            sumExtras.textContent = extrasHrs.toFixed(1);
-            totalDias.textContent = registrosFiltrados.length;
-
-            const txt = Object.keys(semanas).map(s => `S${s}: ${semanas[s].toFixed(1)}`).join(' · ');
-            resumenSemana.textContent = txt || 'Sin datos';
-            totalRegistrosLabel.textContent = `Total registros: ${registrosFiltrados.length} (de ${diasDelPeriodo.length} días)`;
-        }
-
-        // ---------- EXPORTAR EXCEL (FORMATO EXACTO) ----------
-        function exportarExcel() {
-            const diasDelPeriodo = getDiasDelPeriodo();
-            const registrosFiltrados = getRegistrosFiltrados();
-
-            if (diasDelPeriodo.length === 0) {
-                mostrarToast('❌ No hay días en el período');
-                return;
-            }
-
-            try {
-                // Initialize workbook
-                const workbook = new ExcelJS.Workbook();
-                const worksheet = workbook.addWorksheet('Hoja1', {
-                    views: [{ showGridLines: true }]
-                });
-
-                // Column widths
-                const columns = [
-                    { key: 'A', width: 13 },
-                    { key: 'B', width: 13 },
-                    { key: 'C', width: 13 },
-                    { key: 'D', width: 13 },
-                    { key: 'E', width: 13 },
-                    { key: 'F', width: 13 },
-                    { key: 'G', width: 13 },
-                    { key: 'H', width: 13 },
-                    { key: 'I', width: 13 },
-                    { key: 'J', width: 13 },
-                    { key: 'K', width: 13 },
-                    { key: 'L', width: 13 },
-                    { key: 'M', width: 13 },
-                    { key: 'N', width: 13 },
-                    { key: 'O', width: 13 },
-                    { key: 'P', width: 13 },
-                    { key: 'Q', width: 6.57 },
-                    { key: 'R', width: 118.43 }
-                ];
-                worksheet.columns = columns.map(c => ({ header: '', key: c.key, width: c.width }));
-
-                // Helper to parse HH:MM to Excel serial time
-                const parseTimeToExcel = (timeStr) => {
-                    if (!timeStr) return null;
-                    const parts = timeStr.split(':');
-                    const hours = parseInt(parts[0]);
-                    const minutes = parseInt(parts[1]) || 0;
-                    return (hours * 60 + minutes) / 1440;
-                };
-
-                const borderThinBox = {
-                    top: { style: 'thin' },
-                    left: { style: 'thin' },
-                    bottom: { style: 'thin' },
-                    right: { style: 'thin' }
-                };
-
-                const borderThinOpenRight = {
-                    top: { style: 'thin' },
-                    left: { style: 'thin' },
-                    bottom: { style: 'thin' }
-                };
-
-                const borderMedium = {
-                    top: { style: 'medium' },
-                    left: { style: 'medium' },
-                    bottom: { style: 'medium' },
-                    right: { style: 'medium' }
-                };
-
-                const fillWhite = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFF' } };
-                const fillGreen = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'CCFFCC' } };
-                const fillCyan = { type: 'pattern', pattern: 'solid', fgColor: { argb: '00FFFF' } };
-                const fillIvory = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFCC' } };
-                const fillRed = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0000' } };
-                const fillYellow = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFF00' } };
-                const fillLightBlue = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'CCFFFF' } };
-                const fillTan = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCC99' } };
-                const fillPink = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF99CC' } };
-                const fillPaleBlue = { type: 'pattern', pattern: 'solid', fgColor: { argb: '99CCFF' } };
-
-                // Helper to apply fill to a range (even if merged)
-                const fillRange = (rangeStartCol, rangeStartRow, rangeEndCol, rangeEndRow, fillObj) => {
-                    for (let row = rangeStartRow; row <= rangeEndRow; row++) {
-                        for (let col = rangeStartCol; col <= rangeEndCol; col++) {
-                            worksheet.getRow(row).getCell(col).fill = fillObj;
-                        }
-                    }
-                };
-
-                // Helper to set cell borders
-                const setCellBorder = (cell, top, left, bottom, right) => {
-                    cell.border = {
-                        top: top ? { style: top } : undefined,
-                        left: left ? { style: left } : undefined,
-                        bottom: bottom ? { style: bottom } : undefined,
-                        right: right ? { style: right } : undefined
-                    };
-                };
-                const setBorder = setCellBorder;
-
-                // Row heights & setup
-                // Row 1
-                worksheet.getCell('A1').value = 'EMELNOR S.A.';
-                worksheet.getCell('A1').font = { name: 'Arial', size: 10, bold: true };
-                worksheet.getCell('A1').fill = fillWhite;
-
-                // Row 2
-                worksheet.mergeCells('A2:R2');
-                const cellA2 = worksheet.getCell('A2');
-                cellA2.value = 'CONVENIO Y CONTROL DE HORAS EXTRAORDINARIAS';
-                cellA2.font = { name: 'Arial', size: 14, bold: true };
-                cellA2.alignment = { horizontal: 'center' };
-                worksheet.getRow(2).height = 18;
-
-                // Row 3
-                for (let col = 1; col <= 18; col++) {
-                    const cell = worksheet.getRow(3).getCell(col);
-                    cell.font = { name: 'Arial', size: 14, bold: true };
-                    cell.alignment = { horizontal: 'center' };
-                }
-                worksheet.getRow(3).height = 18;
-
-                // Row 4
-                worksheet.mergeCells('A4:C4');
-                worksheet.getCell('A4').value = 'En  Antofagasta a        ';
-                worksheet.getCell('A4').font = { name: 'Arial', size: 12 };
-
-                worksheet.mergeCells('D4:H4');
-                const cellD4 = worksheet.getCell('D4');
-                cellD4.value = new Date();
-                cellD4.font = { name: 'Arial', size: 12, bold: true };
-                cellD4.numFmt = 'dd" de "mmmm" del "yyyy';
-                cellD4.alignment = { horizontal: 'center' };
-                fillRange(4, 4, 8, 4, fillGreen); // D4:H4 green
-
-                worksheet.getCell('I4').value = 'se suscribe  el  presente convenio , mediante el cual el trabajador acuerda laborar horas   extraordinarias, de acuerdo a';
-                worksheet.getCell('I4').font = { name: 'Arial', size: 12 };
-                worksheet.getRow(4).height = 18;
-
-                // Row 5
-                worksheet.mergeCells('A5:R5');
-                worksheet.getRow(5).height = 15.75;
-
-                // Row 6
-                const info = getPeriodoInfo(mesSeleccionado, añoSeleccionado);
-                const inicio = getFechaInicioPeriodo(mesSeleccionado, añoSeleccionado);
-                const fin = getFechaFinPeriodo(mesSeleccionado, añoSeleccionado);
-                const padZero = (n) => String(n).padStart(2, '0');
-                const startStr = `${padZero(inicio.getDate())}/${padZero(inicio.getMonth() + 1)}/${inicio.getFullYear()}`;
-                const endStr = `${padZero(fin.getDate())}/${padZero(fin.getMonth() + 1)}/${fin.getFullYear()}`;
-
-                worksheet.mergeCells('A6:R6');
-                const cellA6 = worksheet.getCell('A6');
-                cellA6.value = 'Periodo de  Vigencia del Convenio: ' + startStr + ' al ' + endStr;
-                cellA6.font = { name: 'Arial', size: 12, bold: true };
-                cellA6.alignment = { horizontal: 'center' };
-                cellA6.numFmt = 'mmmm" del "yyyy';
-                fillRange(1, 6, 18, 6, fillGreen); // A6:R6 green
-                worksheet.getRow(6).height = 15.75;
-
-                // Row 7
-                worksheet.mergeCells('A7:C7');
-                const cellA7 = worksheet.getCell('A7');
-                cellA7.value = 'Funcionario(a):';
-                cellA7.font = { name: 'Arial', size: 12, bold: true };
-                cellA7.alignment = { horizontal: 'center' };
-                cellA7.numFmt = 'mmm-yy';
-
-                worksheet.mergeCells('D7:I7');
-                const cellD7 = worksheet.getCell('D7');
-                cellD7.value = 'MARCO GARRIDO';
-                cellD7.font = { name: 'Arial', size: 12, bold: true };
-                fillRange(4, 7, 9, 7, fillCyan); // D7:I7 cyan
-
-                worksheet.mergeCells('P7:Q7');
-                const cellP7 = worksheet.getCell('P7');
-                cellP7.value = 'Cargo:';
-                cellP7.font = { name: 'Arial', size: 12, bold: true };
-                cellP7.alignment = { horizontal: 'right' };
-                cellP7.numFmt = 'mmm-yy';
-                worksheet.getCell('R7').numFmt = 'mmm-yy';
-                worksheet.getRow(7).height = 15.75;
-
-                // Row 8
-                worksheet.getCell('A8').value = 'Nº Tarjeta:';
-                worksheet.getCell('A8').font = { name: 'Arial', size: 12, bold: true };
-                worksheet.getCell('A8').fill = fillWhite;
-                worksheet.getCell('A8').numFmt = 'mmm-yy';
-                worksheet.getCell('B8').numFmt = 'mmm-yy';
-                worksheet.getCell('B8').font = { name: 'Arial', size: 12, bold: true };
-
-                worksheet.getCell('C8').fill = fillGreen;
-                worksheet.getCell('C8').numFmt = '#,##0';
-                worksheet.getCell('C8').font = { name: 'Arial', size: 12 };
-                worksheet.getCell('C8').alignment = { horizontal: 'center' };
-                setCellBorder(worksheet.getCell('C8'), null, null, 'medium', null);
-
-                worksheet.getCell('E8').value = 'Área:';
-                worksheet.getCell('E8').font = { name: 'Arial', size: 10, bold: true };
-
-                worksheet.mergeCells('F8:O8');
-                const cellF8 = worksheet.getCell('F8');
-                cellF8.value = 'Sistemas ';
-                cellF8.font = { name: 'Arial', size: 12 };
-                fillRange(6, 8, 15, 8, fillWhite);
-                for (let col = 6; col <= 15; col++) {
-                    setCellBorder(worksheet.getRow(8).getCell(col), null, null, 'medium', null);
-                }
-                
-                worksheet.mergeCells('P8:Q8');
-                const cellP8 = worksheet.getCell('P8');
-                cellP8.value = 'Jefe directo:';
-                cellP8.font = { name: 'Arial', size: 12, bold: true };
-                cellP8.alignment = { horizontal: 'right' };
-                cellP8.numFmt = 'mmm-yy';
-                setCellBorder(worksheet.getCell('P8'), null, null, 'medium', null);
-                setCellBorder(worksheet.getCell('Q8'), null, null, 'medium', null);
-
-                worksheet.getCell('R8').value = 'Carlos Rodriguez';
-                worksheet.getCell('R8').font = { name: 'Arial', size: 12 };
-                worksheet.getCell('R8').numFmt = 'mmm-yy';
-                worksheet.getRow(8).height = 16.5;
-
-                // Row 9 Headers - using \u00aa (feminine ordinal indicator ª)
-                worksheet.getCell('C9').value = '1\u00aa';
-                worksheet.getCell('D9').value = '1\u00aa';
-                worksheet.getCell('E9').value = '2\u00aa';
-                worksheet.getCell('F9').value = '2\u00aa';
-                worksheet.getCell('G9').value = '3\u00aa';
-                worksheet.getCell('H9').value = '3\u00aa';
-                worksheet.getCell('I9').value = '4\u00aa';
-                worksheet.getCell('J9').value = '4\u00aa';
-                worksheet.getCell('K9').value = 'TPO.';
-                
-                worksheet.mergeCells('L9:N9');
-                worksheet.getCell('L9').value = 'HORAS';
-
-                worksheet.mergeCells('O9:Q9');
-                worksheet.getCell('O9').value = 'Nº DE HORAS';
-
-                // Row 10 Headers
-                worksheet.mergeCells('A10:B10');
-                worksheet.getCell('A10').value = 'DÍA';
-                
-                worksheet.getCell('C10').value = 'ENT.';
-                worksheet.getCell('D10').value = 'SAL.';
-                worksheet.getCell('E10').value = 'ENT.';
-                worksheet.getCell('F10').value = 'SAL.';
-                worksheet.getCell('G10').value = 'ENT.';
-                worksheet.getCell('H10').value = 'SAL.';
-                worksheet.getCell('I10').value = 'ENT.';
-                worksheet.getCell('J10').value = 'SAL.';
-                worksheet.getCell('K10').value = 'PERM.';
-
-                worksheet.mergeCells('L10:N10');
-                worksheet.getCell('L10').value = 'PERM.';
-
-                worksheet.getCell('O10').value = 'Total';
-                worksheet.getCell('P10').value = 'Norm.';
-                worksheet.getCell('Q10').value = 'Extras';
-                worksheet.getCell('R10').value = 'MOTIVO DE HORAS EXTRAORDINARIAS';
-
-                // Apply colors to Headers row 9 & 10
-                fillRange(3, 9, 4, 9, fillTan); // 1º Ent/Sal
-                fillRange(3, 10, 4, 10, fillTan);
-                fillRange(5, 9, 6, 9, fillLightBlue); // 2º
-                fillRange(5, 10, 6, 10, fillLightBlue);
-                fillRange(7, 9, 8, 9, fillPink); // 3º
-                fillRange(7, 10, 8, 10, fillPink);
-                fillRange(9, 9, 10, 9, fillPaleBlue); // 4º
-                fillRange(9, 10, 10, 10, fillPaleBlue);
-                
-                worksheet.getCell('Q10').fill = fillIvory;
-
-                // Format Rows 9 and 10 fonts/alignments
-                const colNames = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R'];
-                colNames.forEach(col => {
-                    const c9 = worksheet.getCell(`${col}9`);
-                    const c10 = worksheet.getCell(`${col}10`);
-
-                    const isAB9 = col === 'A' || col === 'B';
-                    c9.font = { name: 'Arial', size: 10, bold: !isAB9 && col !== 'R' };
-                    c10.font = { name: 'Arial', size: 10, bold: true };
-
-                    if (!isAB9 && col !== 'R') {
-                        c9.alignment = { horizontal: 'center' };
-                    }
-                    c10.alignment = { horizontal: 'center' };
-                });
-
-                // Precise Row 9 borders (on master cells only for merged ranges)
-                setBorder(worksheet.getCell('A9'), 'medium', 'medium', null, null);
-                setBorder(worksheet.getCell('B9'), 'medium', null, null, 'medium');
-                for (let c = 3; c <= 11; c++) {
-                    setBorder(worksheet.getRow(9).getCell(c), 'medium', 'medium', null, null);
-                }
-                // L9:N9 merged -> master L9 gets the outer borders
-                setBorder(worksheet.getCell('L9'), 'medium', 'medium', null, 'medium');
-                // O9:Q9 merged -> master O9 gets the outer borders
-                setBorder(worksheet.getCell('O9'), 'medium', 'medium', 'medium', 'medium');
-                setBorder(worksheet.getCell('R9'), 'medium', 'medium', null, 'medium');
-
-                // Precise Row 10 borders (on master cells only for merged ranges)
-                // A10:B10 merged -> master A10 gets outer borders
-                setBorder(worksheet.getCell('A10'), null, 'medium', 'medium', 'medium');
-                for (let c = 3; c <= 11; c++) {
-                    setBorder(worksheet.getRow(10).getCell(c), null, 'medium', 'medium', null);
-                }
-                // L10:N10 merged -> master L10 gets outer borders
-                setBorder(worksheet.getCell('L10'), null, 'medium', 'medium', 'medium');
-                
-                setBorder(worksheet.getCell('O10'), 'medium', 'medium', 'medium', 'medium');
-                setBorder(worksheet.getCell('P10'), 'medium', 'medium', 'medium', 'medium');
-                setBorder(worksheet.getCell('Q10'), 'medium', 'medium', 'medium', 'medium');
-                setBorder(worksheet.getCell('R10'), null, 'medium', 'medium', 'medium');
-
-                worksheet.getRow(9).height = 15.75;
-                worksheet.getRow(10).height = 15.75;
-
-                const registroMap = {};
-                registrosFiltrados.forEach(r => {
-                    registroMap[r.fecha] = r;
-                });
-
-                // Populate data rows 11 to 42
-                let r = 11;
-                let firstRowOfWeek = 11;
-                let weekBaseHours = 0;
-
-                const totalRowsToGenerate = 32;
-                for (let index = 0; index < totalRowsToGenerate; index++) {
-                    const isPadding = (index >= diasDelPeriodo.length);
-                    let fechaStr = null;
-                    let diaNum = '';
-                    let diaNombre = '';
-                    let esDom = false;
-                    let esSab = false;
-                    let esFer = false;
-                    let h = null;
-
-                    if (!isPadding) {
-                        fechaStr = diasDelPeriodo[index];
-                        diaNum = obtenerDiaDesdeFecha(fechaStr);
-                        diaNombre = getDiaSemanaReal(fechaStr);
-                        esDom = diaNombre === 'Domingo' || diaNombre === 'domingo';
-                        esSab = diaNombre === 'Sábado' || diaNombre === 'sábado';
-                        esFer = esFeriadoReal(fechaStr);
-
-                        let registro = registroMap[fechaStr];
-                        if (registro) {
-                            h = {
-                                e1: registro.e1,
-                                s1: registro.s1,
-                                e2: registro.e2,
-                                s2: registro.s2,
-                                total: registro.total,
-                                normales: registro.normales,
-                                extras: registro.extras,
-                                esCorrido: registro.esCorrido,
-                                esManual: registro.esManual,
-                                motivo: registro.motivo || '',
-                                esFeriado: registro.esFeriado
-                            };
-                        } else {
-                            if (esDom || esFer) {
-                                h = { e1: '', s1: '', e2: '', s2: '', total: 0, normales: 0, extras: 0, esCorrido: false, esManual: true, motivo: '', esFeriado: esFer };
-                            } else if (esSab) {
-                                h = { e1: '10:00', s1: '12:30', e2: '', s2: '', total: 2.5, normales: 2.5, extras: 0, esCorrido: true, esManual: false, motivo: '', esFeriado: false };
-                            } else {
-                                const base = getHorarioBase(diaNombre);
-                                h = {
-                                    e1: base.e1,
-                                    s1: base.s1,
-                                    e2: base.e2,
-                                    s2: base.s2,
-                                    total: base.base,
-                                    normales: base.base,
-                                    extras: 0,
-                                    esCorrido: false,
-                                    esManual: false,
-                                    motivo: '',
-                                    esFeriado: false
-                                };
-                            }
-                        }
-                    } else {
-                        // Padding row
-                        h = { e1: '', s1: '', e2: '', s2: '', total: 0, normales: 0, extras: 0, esCorrido: false, esManual: true, motivo: '', esFeriado: false };
-                    }
-
-                    const cellA = worksheet.getCell(`A${r}`);
-                    const cellB = worksheet.getCell(`B${r}`);
-                    const cellC = worksheet.getCell(`C${r}`);
-                    const cellD = worksheet.getCell(`D${r}`);
-                    const cellE = worksheet.getCell(`E${r}`);
-                    const cellF = worksheet.getCell(`F${r}`);
-                    const cellG = worksheet.getCell(`G${r}`);
-                    const cellH = worksheet.getCell(`H${r}`);
-                    const cellI = worksheet.getCell(`I${r}`);
-                    const cellJ = worksheet.getCell(`J${r}`);
-                    const cellK = worksheet.getCell(`K${r}`);
-                    const cellL = worksheet.getCell(`L${r}`);
-                    const cellM = worksheet.getCell(`M${r}`);
-                    const cellN = worksheet.getCell(`N${r}`);
-                    const cellR = worksheet.getCell(`R${r}`);
-
-                    cellA.value = diaNum;
-                    cellB.value = diaNombre ? diaNombre.toLowerCase() : '';
-
-                    cellC.value = h.e1 ? parseTimeToExcel(h.e1) : '';
-                    cellD.value = h.s1 ? parseTimeToExcel(h.s1) : '';
-                    cellE.value = h.e2 ? parseTimeToExcel(h.e2) : '';
-                    cellF.value = h.s2 ? parseTimeToExcel(h.s2) : '';
-                    cellG.value = '';
-                    cellH.value = '';
-                    cellI.value = '';
-                    cellJ.value = '';
-
-                    cellK.value = { formula: `(D${r}-C${r})+(F${r}-E${r})+(H${r}-G${r})+(J${r}-I${r})` };
-                    cellL.value = { formula: `HOUR(K${r})` };
-                    cellM.value = { formula: `(MINUTE(K${r}))/60` };
-                    cellN.value = { formula: `+L${r}+M${r}` };
-                    cellR.value = h.motivo || '';
-
-                    // Apply numFmt
-                    cellC.numFmt = 'h:mm';
-                    cellD.numFmt = 'h:mm';
-                    cellE.numFmt = 'h:mm';
-                    cellF.numFmt = 'h:mm';
-                    cellG.numFmt = 'h:mm';
-                    cellH.numFmt = 'h:mm';
-                    cellI.numFmt = 'h:mm';
-                    cellJ.numFmt = 'h:mm';
-                    cellK.numFmt = 'h:mm';
-                    cellL.numFmt = '#,##0;[Red]\\(#,##0\\)';
-                    cellM.numFmt = '#,##0.00;[Red]\\(#,##0.00\\)';
-                    cellN.numFmt = '#,##0.00;[Red]\\(#,##0.00\\)';
-
-                    // Arial 10pt regular for all cell rows
-                    const rowCells = [cellA, cellB, cellC, cellD, cellE, cellF, cellG, cellH, cellI, cellJ, cellK, cellL, cellM, cellN, cellR];
-                    rowCells.forEach(cell => {
-                        cell.font = { name: 'Arial', size: 10 };
-                    });
-                    cellN.font = { name: 'Arial', size: 10, bold: true };
-
-                    // Precise borders for daily row
-                    const isSundayOrHoliday = esDom || esFer;
-                    if (isSundayOrHoliday) {
-                        const boxCols = [cellA, cellB, cellJ, cellK, cellR];
-                        boxCols.forEach(c => c.border = borderThinBox);
-                        const openRightCols = [cellC, cellD, cellE, cellF, cellG, cellH, cellI, cellL, cellM, cellN];
-                        openRightCols.forEach(c => c.border = borderThinOpenRight);
-                    } else {
-                        const boxCols = [cellA, cellB, cellG, cellH, cellI, cellJ, cellK, cellR];
-                        boxCols.forEach(c => c.border = borderThinBox);
-                        const openRightCols = [cellC, cellD, cellE, cellF, cellL, cellM, cellN];
-                        openRightCols.forEach(c => c.border = borderThinOpenRight);
-                    }
-
-                    if (r === 35 || r === 42) {
-                        cellR.border = {
-                            top: undefined,
-                            bottom: undefined,
-                            left: undefined,
-                            right: undefined
-                        };
-                    }
-
-                    cellB.alignment = { horizontal: 'left' };
-                    const centerCells = [cellC, cellD, cellE, cellF, cellG, cellH, cellI, cellJ, cellK];
-                    centerCells.forEach(c => c.alignment = { horizontal: 'center' });
-
-                    // Fills
-                    cellA.fill = fillWhite;
-
-                    let fill = null;
-                    const workedAny = h.e1 && h.s1;
-
-                    if (isSundayOrHoliday) {
-                        if (workedAny) {
-                            fill = fillRed;
-                        } else {
-                            fill = fillYellow;
-                        }
-                    } else {
-                        fill = fillLightBlue;
-                    }
-
-                    if (isSundayOrHoliday) {
-                        // Fill C to Q with red/yellow on Sundays/Holidays
-                        for (let col = 3; col <= 17; col++) {
-                            worksheet.getRow(r).getCell(col).fill = fill;
-                        }
-                    } else {
-                        // Fill C to J with light blue, K to N with white
-                        for (let col = 3; col <= 10; col++) {
-                            worksheet.getRow(r).getCell(col).fill = fill;
-                        }
-                        for (let col = 11; col <= 14; col++) {
-                            worksheet.getRow(r).getCell(col).fill = fillWhite;
-                        }
-                    }
-
-                    if (!isPadding) {
-                        const base = getHorarioBase(diaNombre);
-                        if (isSundayOrHoliday) {
-                            weekBaseHours += 0;
-                        } else {
-                            weekBaseHours += base.base;
-                        }
-                    } else {
-                        weekBaseHours += 0;
-                    }
-
-                    const isLastRow = (index === totalRowsToGenerate - 1);
-                    if (isSundayOrHoliday || isLastRow) {
-                        const cellO = worksheet.getCell(`O${r}`);
-                        const cellP = worksheet.getCell(`P${r}`);
-                        const cellQ = worksheet.getCell(`Q${r}`);
-
-                        cellO.value = { formula: `SUM(N${firstRowOfWeek}:N${r})` };
-                        cellP.value = weekBaseHours;
-                        cellQ.value = { formula: `SUM(O${r}-P${r})` };
-
-                        cellO.numFmt = '0.00';
-                        cellP.numFmt = '0.00';
-                        cellQ.numFmt = '0.00';
-
-                        const summaryCells = [cellO, cellP, cellQ];
-                        summaryCells.forEach(c => {
-                            c.font = { name: 'Arial', size: 10, bold: true };
-                            if (c === cellQ) {
-                                c.alignment = undefined; // Left/none alignment for Extras summary cell
-                            } else {
-                                c.alignment = { horizontal: 'center' };
-                            }
-                            if (isSundayOrHoliday) {
-                                c.border = {
-                                    left: { style: 'thin' },
-                                    right: { style: 'thin' },
-                                    bottom: { style: 'thin' }
-                                };
-                            } else {
-                                c.border = borderThinBox;
-                            }
-                        });
-
-                        firstRowOfWeek = r + 1;
-                        weekBaseHours = 0;
-                    } else {
-                        const cellO = worksheet.getCell(`O${r}`);
-                        const cellP = worksheet.getCell(`P${r}`);
-                        const cellQ = worksheet.getCell(`Q${r}`);
-                        const emptyCells = [cellO, cellP, cellQ];
-                        emptyCells.forEach(c => {
-                            c.value = '';
-                            c.font = { name: 'Arial', size: 10 };
-                            c.border = borderThinBox;
-                        });
-                    }
-
-                    r++;
-                }
-
-                // Totals at bottom
-                // Row 43 (empty Sunday row in template)
-                for (let col = 1; col <= 18; col++) {
-                    const colName = colNames[col - 1];
-                    const cell = worksheet.getCell(`${colName}43`);
-                    cell.font = { name: 'Arial', size: 10 };
-                    cell.fill = fillYellow;
-                }
-                worksheet.getCell('A43').border = borderThinBox;
-
-                // Row 44 (empty spacer row)
-                worksheet.getRow(44).height = 15.75;
-                for (let col = 1; col <= 18; col++) {
-                    const colName = colNames[col - 1];
-                    const cell = worksheet.getCell(`${colName}44`);
-                    cell.font = { name: 'Arial', size: 10 };
-                }
-
-                // Row 45 (Totals)
-                worksheet.getRow(45).height = 15.75;
-                for (let col = 1; col <= 18; col++) {
-                    const colName = colNames[col - 1];
-                    const cell = worksheet.getCell(`${colName}45`);
-                    cell.font = { name: 'Arial', size: 10 };
-                }
-                
-                // Set values & formats for totals
-                const cellN45 = worksheet.getCell('N45');
-                cellN45.value = { formula: 'SUM(N7:N42)' };
-                cellN45.font = { name: 'Arial', size: 10, bold: true };
-                cellN45.numFmt = '0.00';
-                cellN45.border = borderMedium;
-
-                const cellO45 = worksheet.getCell('O45');
-                cellO45.value = { formula: 'SUM(O11:O42)' };
-                cellO45.font = { name: 'Arial', size: 10, bold: true };
-                cellO45.numFmt = '0.00';
-                cellO45.alignment = { horizontal: 'center' };
-                cellO45.border = borderMedium;
-
-                const cellP45 = worksheet.getCell('P45');
-                cellP45.value = { formula: 'SUM(P11:P42)' };
-                cellP45.font = { name: 'Arial', size: 10, bold: true };
-                cellP45.numFmt = '0.00';
-                cellP45.alignment = { horizontal: 'center' };
-                cellP45.border = borderMedium;
-
-                const cellQ45 = worksheet.getCell('Q45');
-                cellQ45.value = { formula: 'SUM(Q13:Q42)' };
-                cellQ45.font = { name: 'Arial', size: 10, bold: true };
-                cellQ45.numFmt = '0.00';
-                cellQ45.alignment = { horizontal: 'center' };
-                cellQ45.border = borderMedium;
-
-                // Medium top border for A45 and C45:M45
-                setCellBorder(worksheet.getCell('A45'), 'medium', null, null, null);
-                for (let col = 3; col <= 13; col++) {
-                    setCellBorder(worksheet.getRow(45).getCell(col), 'medium', null, null, null);
-                }
-                // K45 alignment center
-                worksheet.getCell('K45').alignment = { horizontal: 'center' };
-
-                // Row 46 (Percentage & Extras)
-                worksheet.getRow(46).height = 15.75;
-                for (let col = 1; col <= 18; col++) {
-                    const colName = colNames[col - 1];
-                    const cell = worksheet.getCell(`${colName}46`);
-                    cell.font = { name: 'Arial', size: 10 };
-                }
-                
-                // Set values, formats & borders for row 46
-                worksheet.getCell('N46').font = { name: 'Arial', size: 10, bold: true };
-                worksheet.getCell('O46').font = { name: 'Arial', size: 10, bold: true };
-                worksheet.getCell('P46').font = { name: 'Arial', size: 10, bold: true };
-                worksheet.getCell('Q46').font = { name: 'Arial', size: 10, bold: true };
-                
-                worksheet.getCell('N46').numFmt = '0.00';
-                worksheet.getCell('O46').numFmt = '0.00';
-                worksheet.getCell('P46').numFmt = '0.00';
-                worksheet.getCell('Q46').numFmt = '0.00';
-
-                worksheet.getCell('K46').alignment = { horizontal: 'center' };
-                worksheet.getCell('O46').alignment = { horizontal: 'center' };
-                worksheet.getCell('P46').alignment = { horizontal: 'center' };
-                worksheet.getCell('Q46').alignment = { horizontal: 'center' };
-
-                worksheet.getCell('Q46').fill = fillYellow;
-                worksheet.getCell('Q46').border = borderMedium;
-
-                const cellR46 = worksheet.getCell('R46');
-                cellR46.value = 0.5;
-                cellR46.font = { name: 'Arial', size: 10, bold: true };
-                cellR46.fill = fillYellow;
-                cellR46.alignment = { horizontal: 'center' };
-                cellR46.numFmt = '0%';
-                cellR46.border = borderMedium;
-
-                // Row 47 (empty divider row)
-                for (let col = 1; col <= 18; col++) {
-                    const colName = colNames[col - 1];
-                    const cell = worksheet.getCell(`${colName}47`);
-                    cell.font = { name: 'Arial', size: 10 };
-                }
-                worksheet.getCell('L47').alignment = { horizontal: 'center' };
-                worksheet.getCell('Q47').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCC00' } };
-                
-                // Row 47 medium top divider border on A47 to Q47
-                for (let col = 1; col <= 17; col++) {
-                    const cell = worksheet.getRow(47).getCell(col);
-                    cell.border = { top: { style: 'medium' } };
-                }
-                // A47 also has left medium border
-                worksheet.getCell('A47').border = { top: { style: 'medium' }, left: { style: 'medium' } };
-
-                // Row 48
-                for (let col = 1; col <= 18; col++) {
-                    const colName = colNames[col - 1];
-                    const cell = worksheet.getCell(`${colName}48`);
-                    cell.font = { name: 'Arial', size: 10 };
-                }
-                worksheet.getCell('A48').value = ' Primero: A través del presente documento, el  trabajador  quien  suscribe  el  presente convenio y   autorización de horas extraordinarias,    acepta  y  reconoce  que las horas   ';
-                worksheet.getCell('A48').alignment = { horizontal: 'left' };
-                worksheet.getCell('B48').alignment = { horizontal: 'left' };
-                worksheet.getCell('L48').alignment = { horizontal: 'center' };
-                worksheet.getCell('R48').alignment = { horizontal: 'left' };
-                worksheet.getCell('Q48').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCC00' } };
-
-                // Row 49
-                for (let col = 1; col <= 18; col++) {
-                    const colName = colNames[col - 1];
-                    const cell = worksheet.getCell(`${colName}49`);
-                    cell.font = { name: 'Arial', size: 10 };
-                }
-                worksheet.getCell('A49').value = 'extraordinarias aquí expuestas  son  las  únicas   horas trabajadas  con  autorización  del  empleador  y consecuentemente  reconoce que son las que deben  ser canceladas como tal.';
-                worksheet.getCell('A49').alignment = { horizontal: 'left' };
-                worksheet.getCell('L49').alignment = { horizontal: 'center' };
-                worksheet.getCell('Q49').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCC00' } };
-
-                // Row 50
-                for (let col = 1; col <= 18; col++) {
-                    const colName = colNames[col - 1];
-                    const cell = worksheet.getCell(`${colName}50`);
-                    cell.font = { name: 'Arial', size: 10 };
-                }
-                worksheet.getCell('A50').value = 'Segundo: Los abajo firmantes declaran que las horas de entrada y salida señaladas en el presente documento, son fiel reflejo de lo registrado en las tarjetas de control de asistencia utilizadas formal y oficialmente por el Empleador,';
-                worksheet.getCell('A50').font = { name: 'Arial', size: 10, bold: true };
-                for (let col = 1; col <= 17; col++) {
-                    worksheet.getRow(50).getCell(col).alignment = { horizontal: 'left' };
-                }
-                worksheet.getCell('Q50').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCC00' } };
-                worksheet.getCell('A50').border = { left: { style: 'medium' } };
-
-                // Row 51
-                for (let col = 1; col <= 18; col++) {
-                    const colName = colNames[col - 1];
-                    const cell = worksheet.getCell(`${colName}51`);
-                    cell.font = { name: 'Arial', size: 10 };
-                }
-                worksheet.getCell('A51').value = 'expresando su conformidad con los cálculos y demás datos indicados. ';
-                worksheet.getCell('L51').alignment = { horizontal: 'center' };
-                worksheet.getCell('Q51').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCC00' } };
-                worksheet.getCell('A51').border = { left: { style: 'medium' } };
-
-                // Row 52
-                for (let col = 1; col <= 18; col++) {
-                    const colName = colNames[col - 1];
-                    const cell = worksheet.getCell(`${colName}52`);
-                    cell.font = { name: 'Arial', size: 10 };
-                }
-                worksheet.getCell('R52').value = '________________________________';
-                worksheet.getCell('L52').alignment = { horizontal: 'center' };
-                worksheet.getCell('Q52').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCC00' } };
-                worksheet.getCell('A52').border = { left: { style: 'medium' } };
-
-                // Row 53
-                worksheet.getRow(53).height = 15.75;
-                for (let col = 1; col <= 18; col++) {
-                    const colName = colNames[col - 1];
-                    const cell = worksheet.getCell(`${colName}53`);
-                    cell.font = { name: 'Arial', size: 10 };
-                }
-                worksheet.getCell('R53').value = 'VºBº Jefe Depto. Recurso Humano';
-                worksheet.getCell('R53').font = { name: 'Arial', size: 10, bold: true };
-                worksheet.getCell('L53').alignment = { horizontal: 'center' };
-                worksheet.getCell('R53').alignment = { horizontal: 'left' };
-                worksheet.getCell('Q53').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCC00' } };
-                worksheet.getCell('A53').border = { left: { style: 'medium' } };
-
-                // Row 54
-                for (let col = 1; col <= 18; col++) {
-                    const colName = colNames[col - 1];
-                    const cell = worksheet.getCell(`${colName}54`);
-                    cell.font = { name: 'Arial', size: 10 };
-                }
-                worksheet.getCell('L54').alignment = { horizontal: 'center' };
-                worksheet.getCell('Q54').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCC00' } };
-                worksheet.getCell('A54').border = { left: { style: 'medium' } };
-                worksheet.getCell('R54').border = { top: { style: 'medium' }, right: { style: 'medium' } };
-
-                // Row 55
-                for (let col = 1; col <= 18; col++) {
-                    const colName = colNames[col - 1];
-                    const cell = worksheet.getCell(`${colName}55`);
-                    cell.font = { name: 'Arial', size: 10 };
-                }
-                worksheet.getCell('B55').value = 'Firma Funcionario';
-                worksheet.getCell('J55').value = 'Firma Jefe Directo';
-                worksheet.getCell('R55').alignment = { horizontal: 'left' };
-                worksheet.getCell('Q55').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCC00' } };
-                
-                worksheet.getCell('B55').font = { name: 'Arial', size: 10, bold: true };
-                worksheet.getCell('C55').font = { name: 'Arial', size: 10, bold: true };
-                worksheet.getCell('D55').font = { name: 'Arial', size: 10, bold: true };
-                worksheet.getCell('J55').font = { name: 'Arial', size: 10, bold: true };
-                worksheet.getCell('K55').font = { name: 'Arial', size: 10, bold: true };
-                worksheet.getCell('L55').font = { name: 'Arial', size: 10, bold: true };
-                worksheet.getCell('M55').font = { name: 'Arial', size: 10, bold: true };
-                worksheet.getCell('N55').font = { name: 'Arial', size: 10, bold: true };
-                worksheet.getCell('O55').font = { name: 'Arial', size: 10, bold: true };
-
-                worksheet.getCell('B55').border = { top: { style: 'thin' } };
-                worksheet.getCell('C55').border = { top: { style: 'thin' } };
-                worksheet.getCell('D55').border = { top: { style: 'thin' } };
-                worksheet.getCell('J55').border = { top: { style: 'thin' } };
-                worksheet.getCell('K55').border = { top: { style: 'thin' } };
-                worksheet.getCell('L55').border = { top: { style: 'thin' } };
-                worksheet.getCell('M55').border = { top: { style: 'thin' } };
-                worksheet.getCell('N55').border = { top: { style: 'thin' } };
-                worksheet.getCell('O55').border = { top: { style: 'thin' } };
-
-                worksheet.getCell('A55').border = { left: { style: 'medium' } };
-                worksheet.getCell('R55').border = { right: { style: 'medium' } };
-
-                // Row 56
-                for (let col = 1; col <= 18; col++) {
-                    const colName = colNames[col - 1];
-                    const cell = worksheet.getCell(`${colName}56`);
-                    cell.font = { name: 'Arial', size: 10 };
-                }
-                worksheet.getCell('K56').alignment = { horizontal: 'center' };
-                worksheet.getCell('R56').font = { name: 'Arial', size: 10, bold: true };
-                worksheet.getCell('R56').alignment = { horizontal: 'left' };
-                worksheet.getCell('A56').border = { left: { style: 'medium' } };
-                worksheet.getCell('R56').border = { right: { style: 'medium' } };
-
-                // Save file in browser
-                const nombreArchivo = `horas_extras_${info.nombreArchivo}.xlsx`;
-                workbook.xlsx.writeBuffer().then(function(buffer) {
-                    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-                    const link = document.createElement('a');
-                    link.href = URL.createObjectURL(blob);
-                    link.download = nombreArchivo;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    mostrarToast('✅ Excel descargado correctamente');
-                });
-
-            } catch (e) {
-                console.error('Error al exportar:', e);
-                mostrarToast('❌ Error al exportar: ' + e.message);
-            }
-        }
-
-        function borrarTodo() {
-            if (confirm('¿Eliminar TODOS los registros?')) {
-                registros = [];
-                guardarEnLocalStorage();
-                renderizar();
-                mostrarToast('🗑️ Todos los registros eliminados');
-            }
-        }
-
-        function mostrarToast(mensaje) {
-            toast.textContent = mensaje;
-            toast.classList.add('show');
-            clearTimeout(toast._timeout);
-            toast._timeout = setTimeout(() => {
-                toast.classList.remove('show');
-            }, 2500);
-        }
-
-        function cargarSelectorMeses() {
-            const hoy = new Date();
-            let mesActual = hoy.getMonth();
-            let añoActual = hoy.getFullYear();
-
-            const opciones = [];
-            let mesesGenerados = 0;
-            let añoTemp = añoActual;
-            let mesTemp = mesActual;
-
-            while (mesesGenerados < 12 && añoTemp >= 2026) {
-                opciones.push({ mes: mesTemp, año: añoTemp });
-                mesesGenerados++;
-                mesTemp--;
-                if (mesTemp < 0) {
-                    mesTemp = 11;
-                    añoTemp--;
-                }
-            }
-
-            if (opciones.length === 0) {
-                opciones.push({ mes: mesActual, año: añoActual });
-            }
-
-            opciones.reverse();
-
-            selectorMes.innerHTML = '';
-            opciones.forEach((opt, idx) => {
-                const option = document.createElement('option');
-                const info = getPeriodoInfo(opt.mes, opt.año);
-                option.value = `${opt.mes}|${opt.año}`;
-                const esActual = (opt.mes === mesActual && opt.año === añoActual);
-                option.textContent = `${MESES[opt.mes]} ${opt.año} ${esActual ? '(Actual)' : ''} (${info.label})`;
-                selectorMes.appendChild(option);
-                
-                // CRITICAL BUG FIX: Default to the LATEST month (which is the current month), 
-                // instead of the oldest one (idx === 0)
-                if (idx === opciones.length - 1) {
-                    option.selected = true;
-                    mesSeleccionado = opt.mes;
-                    añoSeleccionado = opt.año;
-                }
-            });
-            actualizarPeriodoLabels();
-        }
-
-        function actualizarPeriodoLabels() {
-            const info = getPeriodoInfo(mesSeleccionado, añoSeleccionado);
-            periodoLabel.textContent = info.label;
-            periodoBadge.textContent = `16 → 16`;
-            periodoSelectLabel.textContent = info.label;
-            filtroPeriodoLabel.textContent = info.label;
-            resumenPeriodo.textContent = info.label;
-        }
-
-        // ---------- EVENTOS ----------
-        btnGuardar.addEventListener('click', guardarDia);
-        btnLimpiarForm.addEventListener('click', limpiarFormulario);
-        btnBorrarTodo.addEventListener('click', borrarTodo);
-        btnExportarExcel.addEventListener('click', exportarExcel);
-
-        selectorMes.addEventListener('change', function() {
-            const [mes, año] = this.value.split('|').map(Number);
-            mesSeleccionado = mes;
-            añoSeleccionado = año;
-            actualizarPeriodoLabels();
-            renderizar();
-        });
-
-        // Auto-select period when a date is picked
-        fecha.addEventListener('change', function() {
-            const fechaStr = this.value;
-            if (fechaStr) {
-                const period = getPeriodoForFecha(fechaStr);
-                if (period) {
-                    const targetVal = `${period.mes}|${period.año}`;
-                    let hasOption = false;
-                    for (let i = 0; i < selectorMes.options.length; i++) {
-                        if (selectorMes.options[i].value === targetVal) {
-                            hasOption = true;
-                            break;
-                        }
-                    }
-                    
-                    if (hasOption) {
-                        if (selectorMes.value !== targetVal) {
-                            selectorMes.value = targetVal;
-                            mesSeleccionado = period.mes;
-                            añoSeleccionado = period.año;
-                            actualizarPeriodoLabels();
-                            renderizar();
-                        }
-                    } else {
-                        // Dynamically append the option if it is not in the list
-                        const option = document.createElement('option');
-                        const info = getPeriodoInfo(period.mes, period.año);
-                        option.value = targetVal;
-                        option.textContent = `${MESES[period.mes]} ${period.año} (${info.label})`;
-                        selectorMes.appendChild(option);
-                        selectorMes.value = targetVal;
-                        mesSeleccionado = period.mes;
-                        añoSeleccionado = period.año;
-                        actualizarPeriodoLabels();
-                        renderizar();
-                    }
-                }
-                
-                // Prefill form if there's a record already saved for this date
-                const diaNum = obtenerDiaDesdeFecha(fechaStr);
-                const mes = obtenerMesDesdeFecha(fechaStr);
-                const año = obtenerAnioDesdeFecha(fechaStr);
-                const registro = registros.find(r => r.dia === diaNum && r.mes === mes && r.año === año);
-                
-                if (registro) {
-                    esFeriado.checked = !!registro.esFeriado;
-                    corrido.checked = !!registro.esCorrido;
-                    motivo.value = registro.motivo || '';
-                    if (esDomingo(fechaStr) || esFeriado.checked) {
-                        horaEntradaManual.value = registro.entradaManual || '09:30';
-                        horaSalidaManual.value = registro.salidaManual || '15:30';
-                    } else if (esSabado(fechaStr)) {
-                        sabadoSalida.value = registro.sabadoSalida || '12:30';
-                    } else {
-                        horaFinal.value = registro.horaFinal || '19:00';
-                    }
-                } else {
-                    esFeriado.checked = esFeriadoReal(fechaStr);
-                    corrido.checked = false;
-                    motivo.value = '';
-                    if (esDomingo(fechaStr) || esFeriado.checked) {
-                        horaEntradaManual.value = '09:30';
-                        horaSalidaManual.value = '15:30';
-                    } else if (esSabado(fechaStr)) {
-                        sabadoSalida.value = '12:30';
-                    } else {
-                        const diaNombre = getDiaSemanaReal(fechaStr);
-                        const base = getHorarioBase(diaNombre);
-                        horaFinal.value = base.s2 || '19:00';
-                    }
-                }
-            }
-            actualizarPreview();
-        });
-
-        // Trigger updates when checkbox is clicked
-        esFeriado.addEventListener('change', function() {
-            const fechaStr = fecha.value;
-            if (fechaStr) {
-                if (esDomingo(fechaStr) || this.checked) {
-                    horaEntradaManual.value = '09:30';
-                    horaSalidaManual.value = '15:30';
-                } else if (esSabado(fechaStr)) {
-                    sabadoSalida.value = '12:30';
-                } else {
-                    const diaNombre = getDiaSemanaReal(fechaStr);
-                    const base = getHorarioBase(diaNombre);
-                    horaFinal.value = base.s2 || '19:00';
-                }
-            }
-            actualizarPreview();
-        });
-
-        horaFinal.addEventListener('input', actualizarPreview);
-        corrido.addEventListener('change', actualizarPreview);
-        horaEntradaManual.addEventListener('input', actualizarPreview);
-        horaSalidaManual.addEventListener('input', actualizarPreview);
-        sabadoSalida.addEventListener('input', actualizarPreview);
-
-        // ---------- FIREBASE SYNC IMPLEMENTATION ----------
-        function guardarEnFirebase() {
-            if (!isFirebaseInitialized) return;
-            setSyncState('syncing');
-            db.ref('horas_extras/MARCO_GARRIDO/registros').set(registros)
-            .then(() => setSyncState('online'))
-            .catch(err => {
-                console.error("Firebase write error:", err);
-                setSyncState('offline');
-            });
-        }
-
-        function inicializarFirebaseSync() {
-            if (!isFirebaseInitialized) {
-                setSyncState('offline');
-                return;
-            }
-            db.ref('horas_extras/MARCO_GARRIDO/registros').on('value', (snapshot) => {
-                const val = snapshot.val();
-                if (val) {
-                    // Update only if data is actually different to avoid input disruption
-                    if (JSON.stringify(registros) !== JSON.stringify(val)) {
-                        registros = val;
-                        registros.sort((a, b) => {
-                            if (a.año !== b.año) return a.año - b.año;
-                            if (a.mes !== b.mes) return a.mes - b.mes;
-                            return a.dia - b.dia;
-                        });
-                        try {
-                            localStorage.setItem('horasExtras_registros', JSON.stringify(registros));
-                        } catch (e) {}
-                        renderizar();
-                    }
-                    setSyncState('online');
-                } else if (registros.length > 0) {
-                    guardarEnFirebase();
-                } else {
-                    setSyncState('online');
-                }
-            }, (error) => {
-                console.error("Firebase sync error:", error);
-                setSyncState('offline');
-            });
-        }
-
-        // ---------- INICIALIZAR ----------
-        cargarSelectorMeses();
-        cargarDeLocalStorage();
-        
-        // Default to today's date on initial load
-        fecha.value = new Date().toISOString().split('T')[0];
-        
-        // Trigger auto-select period for today's date
-        const initialPeriod = getPeriodoForFecha(fecha.value);
-        if (initialPeriod) {
-            const targetVal = `${initialPeriod.mes}|${initialPeriod.año}`;
-            let hasOption = false;
-            for (let i = 0; i < selectorMes.options.length; i++) {
-                if (selectorMes.options[i].value === targetVal) {
-                    hasOption = true;
-                    break;
-                }
-            }
-            if (hasOption) {
-                selectorMes.value = targetVal;
-                mesSeleccionado = initialPeriod.mes;
-                añoSeleccionado = initialPeriod.año;
-                actualizarPeriodoLabels();
-            }
-        }
-        
-        actualizarPreview();
-        renderizar();
-        
-        // Sync with Firebase database
-        inicializarFirebaseSync();
-
-        console.log('✅ Sistema listo. Datos guardados en LocalStorage y Firebase.');
-    </script>
+            <div class="checkbox-group" id="form-de-corrido-wrapper">
+              <input type="checkbox" id="form-de-corrido">
+              <label for="form-de-corrido" style="font-weight: 700; cursor: pointer;">🔄 Jornada de Corrido (sin colación)</label>
+            </div>
+
+            <div class="checkbox-group">
+              <input type="checkbox" id="form-custom-hours">
+              <label for="form-custom-hours" style="font-weight: 700; cursor: pointer;">⏰ Personalizar Entrada</label>
+            </div>
+          </div>
+
+          <!-- Entrance Input (Toggleable) -->
+          <div id="form-hours-container" style="display: none; margin-bottom: 0.5rem;">
+            <div class="form-group">
+              <label for="form-ent-time" style="font-weight: 700;">Hora Entrada</label>
+              <input type="text" id="form-ent-time" class="form-input form-time-input" placeholder="09:30" maxlength="5">
+            </div>
+          </div>
+
+          <!-- Comment / Motivo -->
+          <div class="form-group">
+            <label for="form-comment" style="font-weight: 700;">Motivo de Horas Extraordinarias (Comentario)</label>
+            <input type="text" id="form-comment" class="form-input" placeholder="Ej. asistiendo usuarios por corte de luz, hasta las 20:30">
+          </div>
+
+          <!-- Buttons -->
+          <div class="form-buttons-container">
+            <button id="form-btn-save-next" class="btn btn-primary" style="flex: 2;">
+              Guardar y Siguiente Día →
+            </button>
+            <button id="form-btn-clear" class="btn btn-secondary" style="flex: 1;">
+              Limpiar Día
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Table Content Panel -->
+      <div id="panel-table-content" class="table-panel-section">
+        <div class="table-container">
+          <table id="payroll-table" class="payroll-table">
+            <thead>
+              <tr class="header-row-1">
+                <th rowspan="2" style="width: 50px;">DÍA</th>
+                <th rowspan="2" style="width: 100px;">FECHA</th>
+                <th rowspan="2" class="col-horario-mobile" style="display: none; width: 150px;">HORARIO</th>
+                <th colspan="2" class="col-shift">1ª</th>
+                <th colspan="2" class="col-shift">2ª</th>
+                <th colspan="2" class="col-shift">3ª</th>
+                <th colspan="2" class="col-shift">4ª</th>
+                <th rowspan="2" style="width: 75px;" class="col-calc-details">TPO. PERM.</th>
+                <th colspan="3" class="col-calc-details">HORAS PERM.</th>
+                <th colspan="3" class="col-summary">N° DE HORAS</th>
+                <th rowspan="2">MOTIVO DE HORAS EXTRAORDINARIAS</th>
+                <th rowspan="2" style="width: 80px;">ACCIONES</th>
+              </tr>
+              <tr class="header-row-2">
+                <th class="col-shift">ENT.</th>
+                <th class="col-shift">SAL.</th>
+                <th class="col-shift">ENT.</th>
+                <th class="col-shift">SAL.</th>
+                <th class="col-shift">ENT.</th>
+                <th class="col-shift">SAL.</th>
+                <th class="col-shift">ENT.</th>
+                <th class="col-shift">SAL.</th>
+                <th style="width: 40px;" class="col-calc-details">H</th>
+                <th style="width: 45px;" class="col-calc-details">MIN. DEC.</th>
+                <th style="width: 55px;">TOTAL DEC.</th>
+                <th style="width: 55px;" class="col-summary">Total</th>
+                <th style="width: 55px;" class="col-summary">Norm.</th>
+                <th style="width: 55px;" class="col-summary">Extras</th>
+              </tr>
+            </thead>
+            <tbody id="payroll-tbody">
+              <!-- Dynamically populated rows -->
+            </tbody>
+            <tfoot>
+              <tr style="background-color: var(--saturday-bg); font-weight: 700;">
+                <td colspan="10" class="center">TOTALES PERÍODO</td>
+                <td id="foot-tpo-perm" class="center col-calc-details">-</td>
+                <td id="foot-horas-h" class="center col-calc-details">-</td>
+                <td id="foot-horas-min" class="center col-calc-details">-</td>
+                <td id="foot-horas-total-dec" class="center">0.00</td>
+                <td id="foot-summary-total" class="center col-summary">0.00</td>
+                <td id="foot-summary-norm" class="center col-summary">0.00</td>
+                <td id="foot-summary-extras" class="center col-summary">0.00</td>
+                <td colspan="2">
+                  <div style="display: flex; gap: 1rem; align-items: center; justify-content: flex-end; font-size: 0.75rem;">
+                    <span style="background-color: var(--sunday-free-bg); color: var(--sunday-free-text); padding: 2px 6px; border: 1px solid var(--border-color); border-radius: 3px; font-weight: 700;">
+                      50%
+                    </span>
+                    <span style="background-color: #d1fae5; color: #065f46; padding: 2px 6px; border: 1px solid var(--border-color); border-radius: 3px; font-weight: 700;">
+                      100%
+                    </span>
+                  </div>
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      <!-- Legal Context Card -->
+      <section class="legal-text-card">
+        <p><strong>Primero:</strong> A través del presente documento, el trabajador quien suscribe el presente convenio y autorización de horas extraordinarias, acepta y reconoce que las horas extraordinarias aquí expuestas son las únicas horas trabajadas con autorización del empleador y consecuentemente reconoce que son las que deben ser canceladas como tal.</p>
+        <p><strong>Segundo:</strong> Los abajo firmantes declaran que las horas de entrada y salida señaladas en el presente documento, son fiel reflejo de lo registrado en las tarjetas de control de asistencia utilizadas formal y oficialmente por el Empleador, expresando su conformidad con los cálculos y demás datos indicados.</p>
+      </section>
+
+      <!-- Signature Section -->
+      <footer class="signature-section">
+        <div class="signature-box">Firma Funcionario</div>
+        <div class="signature-box">Firma Jefe Directo</div>
+      </footer>
+    </main>
+  </div>
+
+  <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+  <script src="app.js?v=1.0.5"></script>
 </body>
 </html>
