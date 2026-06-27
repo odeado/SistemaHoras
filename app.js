@@ -67,6 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentMonth = 4; // Mayo (0-indexed)
   let completeWeek = true;
   let daysData = []; // Array of day objects
+  let registros = []; // Array of all historical flat records
   let employeeInfo = {
     name: "MARCO GARRIDO",
     role: "",
@@ -239,15 +240,131 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // --- Data Management (Local Storage) ---
+
+  const FERIADOS = {
+    '2026-01-01': 'Año Nuevo',
+    '2026-04-03': 'Viernes Santo',
+    '2026-04-04': 'Sábado Santo',
+    '2026-05-01': 'Día del Trabajo',
+    '2026-05-21': 'Día de las Glorias Navales',
+    '2026-06-29': 'San Pedro y San Pablo',
+    '2026-07-16': 'Día de la Virgen del Carmen',
+    '2026-08-15': 'Asunción de la Virgen',
+    '2026-09-18': 'Independencia Nacional',
+    '2026-09-19': 'Día de las Glorias del Ejército',
+    '2026-10-12': 'Día del Encuentro de Dos Mundos',
+    '2026-10-31': 'Día de las Iglesias Evangélicas',
+    '2026-11-01': 'Día de Todos los Santos',
+    '2026-12-08': 'Inmaculada Concepción',
+    '2026-12-25': 'Navidad'
+  };
+
+  const BASE_HORARIOS_SPANISH = {
+    'Lunes': { e1: '09:30', s1: '13:30', e2: '15:00', s2: '19:30', base: 8.5 },
+    'Martes': { e1: '09:30', s1: '13:30', e2: '15:00', s2: '18:30', base: 7.5 },
+    'Miércoles': { e1: '09:30', s1: '13:30', e2: '15:00', s2: '18:30', base: 7.5 },
+    'Jueves': { e1: '09:30', s1: '13:30', e2: '15:00', s2: '19:00', base: 8.0 },
+    'Viernes': { e1: '09:30', s1: '13:30', e2: '15:00', s2: '19:00', base: 8.0 },
+    'Sábado': { e1: '10:00', s1: '12:30', e2: '12:30', s2: '12:30', base: 2.5 },
+    'Domingo': { e1: '', s1: '', e2: '', s2: '', base: 0.0 }
+  };
+
+  function timeToMin(t) {
+    if (!t) return 0;
+    const p = t.split(':');
+    return parseInt(p[0], 10) * 60 + parseInt(p[1], 10);
+  }
+
+  function minToHrs(m) { return m / 60; }
+
+  function getDiaSemanaRealLocal(fechaStr) {
+    if (!fechaStr) return '—';
+    const d = new Date(fechaStr + 'T00:00:00');
+    const dias = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    return dias[d.getDay()];
+  }
+
+  function esFeriadoReal(fechaStr) {
+    if (!fechaStr) return false;
+    return FERIADOS[fechaStr] !== undefined;
+  }
+
+  function getSemana(diaNum, mes, año) {
+    const fecha = new Date(año, mes, diaNum);
+    const diaDelMes = fecha.getDate();
+    if (diaDelMes >= 16 && diaDelMes <= 22) return 1;
+    if (diaDelMes >= 23 && diaDelMes <= 29) return 2;
+    if (diaDelMes >= 30 && diaDelMes <= 31) return 3;
+    if (diaDelMes >= 1 && diaDelMes <= 5) return 3;
+    if (diaDelMes >= 6 && diaDelMes <= 12) return 4;
+    if (diaDelMes >= 13 && diaDelMes <= 16) return 5;
+    return 1;
+  }
+
+  function calcularHorasDia(fechaStr, esCorrido, horaFinalStr, esFeriadoFlag, entradaManual, salidaManual, salidaSabado) {
+    const diaNombre = getDiaSemanaRealLocal(fechaStr);
+    const esDom = diaNombre === 'Domingo';
+    const esSab = diaNombre === 'Sábado';
+    const esFer = esFeriadoFlag || esFeriadoReal(fechaStr);
+
+    if (esDom || esFer) {
+      const entrada = entradaManual || '';
+      const salida = salidaManual || '';
+      if (!entrada || !salida) {
+        return { total: 0, normales: 0, extras: 0 };
+      }
+      const totalMin = timeToMin(salida) - timeToMin(entrada);
+      const total = totalMin > 0 ? minToHrs(totalMin) : 0;
+      return { total: total, normales: 0, extras: total };
+    }
+
+    if (esSab) {
+      const entrada = '10:00';
+      const salida = salidaSabado || '12:30';
+      const totalMin = timeToMin(salida) - timeToMin(entrada);
+      const total = totalMin > 0 ? minToHrs(totalMin) : 0;
+      const base = 2.5;
+      const extras = total > base ? total - base : 0;
+      const normales = total - extras;
+      return { total: total, normales: normales, extras: extras };
+    }
+
+    const base = BASE_HORARIOS_SPANISH[diaNombre] || BASE_HORARIOS_SPANISH['Lunes'];
+    const final = horaFinalStr || '19:00';
+
+    let e1, s1, e2, s2;
+    if (esCorrido) {
+      e1 = base.e1;
+      s1 = base.s1;
+      e2 = base.s1;
+      s2 = final;
+    } else {
+      e1 = base.e1;
+      s1 = base.s1;
+      e2 = base.e2;
+      s2 = final;
+    }
+
+    const b1 = timeToMin(s1) - timeToMin(e1);
+    const b2 = timeToMin(s2) - timeToMin(e2);
+    let totalMin = b1 + b2;
+    if (totalMin < 0) totalMin = 0;
+    const total = minToHrs(totalMin);
+
+    const baseMin = base.base * 60;
+    const extraMin = totalMin > baseMin ? totalMin - baseMin : 0;
+    const extras = minToHrs(extraMin);
+    const normales = total - extras;
+
+    return { total, normales, extras };
+  }
+
   function getStorageKey() {
-    return `horas_extras_data_${currentYear}_${currentMonth}`;
+    return 'horasExtras_registros';
   }
 
   function loadData() {
-    const key = getStorageKey();
-    const stored = localStorage.getItem(key);
-    
-    // Always load global employee details if available
+    // 1. Load employee global details
     const savedEmployee = localStorage.getItem('employee_global_info');
     if (savedEmployee) {
       employeeInfo = JSON.parse(savedEmployee);
@@ -258,54 +375,105 @@ document.addEventListener('DOMContentLoaded', () => {
       employeeManagerInput.value = employeeInfo.manager || '';
     }
 
-    // Generate date sequence
+    // 2. Generate date sequence for the selected period
     const dates = generatePeriodDates(currentYear, currentMonth, completeWeek);
     
     // Show period range text
     if (dates.length > 0) {
       const firstDate = dates[0].dateObj;
       const lastDate = dates[dates.length - 1].dateObj;
-      dateRangeDisplay.textContent = `${formatDateStr(firstDate)} al ${formatDateStr(lastDate)}`;
+      dateRangeDisplay.textContent = formatDateStr(firstDate) + ' al ' + formatDateStr(lastDate);
     }
 
-    // Initialize daysData empty
-    generateEmptyDays(dates);
+    // 3. Load local storage 'horasExtras_registros'
+    try {
+      const localData = localStorage.getItem('horasExtras_registros');
+      if (localData) {
+        registros = JSON.parse(localData);
+        registros.sort((a, b) => {
+          if (a.año !== b.año) return a.año - b.año;
+          if (a.mes !== b.mes) return a.mes - b.mes;
+          return a.dia - b.dia;
+        });
+      } else {
+        registros = [];
+      }
+    } catch(e) {
+      registros = [];
+    }
 
-    // Always load local data first for instant render and offline capability
-    loadLocalStorageBackup(stored, dates);
+    // 4. Populate daysData from registros
+    syncDaysDataFromRegistros(dates);
 
-    // If Firebase is initialized, start cloud sync in background
+    // 5. If Firebase is initialized, start cloud sync
     if (isFirebaseInitialized) {
       setupFirebaseSync();
+    } else {
+      renderTable();
+      populateFormDaySelect();
+      loadFormDayData();
     }
   }
 
-  function generateEmptyDays(dates) {
+  function syncDaysDataFromRegistros(dates) {
     daysData = dates.map(d => {
       const dayOfWeek = d.dayOfWeek;
+      const dateKey = d.dateKey; // YYYY-MM-DD
+      const parts = dateKey.split('-');
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1; // 0-indexed month
+      const dayNum = parseInt(parts[2], 10);
+
+      // Search in registros
+      const matched = registros.find(r => r.dia === dayNum && r.mes === month && r.año === year);
+
       let shifts = ['', '', '', '', '', '', '', ''];
-      
-      if (dayOfWeek !== 0) { // Not Sunday
-        const start = getStandardStartTime(dayOfWeek);
-        const end = getStandardEndTime(dayOfWeek);
-        if (dayOfWeek === 6) {
-          shifts = [start, end, '', '', '', '', '', ''];
-        } else {
-          shifts = [start, '13:30', '15:00', end, '', '', '', ''];
+      let comment = '';
+      let isFeriado = false;
+      let isCorrido = false;
+      let isRegistrado = false;
+
+      if (matched) {
+        isRegistrado = true;
+        isFeriado = !!matched.esFeriado;
+        isCorrido = !!matched.esCorrido;
+        comment = matched.motivo || '';
+        shifts = [
+          matched.e1 || '', matched.s1 || '',
+          matched.e2 || '', matched.s2 || '',
+          '', '', '', ''
+        ];
+      } else {
+        // Defaults
+        isFeriado = esFeriadoReal(dateKey);
+        if (!isFeriado && dayOfWeek !== 0) {
+          const start = getStandardStartTime(dayOfWeek);
+          const end = getStandardEndTime(dayOfWeek);
+          if (dayOfWeek === 6) {
+            shifts = [start, end, '', '', '', '', '', ''];
+          } else {
+            shifts = [start, '13:30', '15:00', end, '', '', '', ''];
+          }
         }
       }
-      
+
       return {
-        dateKey: d.dateKey,
-        dayNum: d.dayNum,
+        dateKey,
+        dayNum,
         dayName: d.dayName,
-        dayOfWeek: dayOfWeek,
+        dayOfWeek,
         dateObj: d.dateObj,
-        isFeriado: false,
-        comment: '',
-        shifts: shifts
+        isFeriado,
+        deCorrido: isCorrido,
+        comment,
+        shifts,
+        isRegistrado
       };
     });
+  }
+
+  function generateEmptyDays(dates) {
+    syncDaysDataFromRegistros(dates);
   }
 
   function saveData() {
@@ -314,40 +482,118 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function saveLocalOnly() {
-    const key = getStorageKey();
-    const dataToSave = {
-      year: currentYear,
-      month: currentMonth,
-      employeeInfo: employeeInfo,
-      days: daysData.map(d => ({
-        dateKey: d.dateKey,
-        isFeriado: d.isFeriado,
-        comment: d.comment,
-        shifts: d.shifts
-      }))
-    };
-    localStorage.setItem(key, JSON.stringify(dataToSave));
+    // 1. Save employee global details
     localStorage.setItem('employee_global_info', JSON.stringify(employeeInfo));
+
+    // 2. Translate daysData of current period into registros flat list
+    daysData.forEach(day => {
+      const parts = day.dateKey.split('-');
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const dayNum = parseInt(parts[2], 10);
+
+      // Check if the day is custom/modified:
+      const isDom = day.dayOfWeek === 0;
+      const isFer = day.isFeriado;
+      const standardFeriado = esFeriadoReal(day.dateKey);
+      const stdStart = getStandardStartTime(day.dayOfWeek);
+      const stdEnd = getStandardEndTime(day.dayOfWeek);
+      
+      let isModified = false;
+      if (day.comment && day.comment.trim() !== '') {
+        isModified = true;
+      }
+      if (isFer !== standardFeriado) {
+        isModified = true;
+      }
+
+      // Check if shifts are custom:
+      if (isDom || isFer) {
+        if (day.shifts[0] || day.shifts[1]) {
+          isModified = true;
+        }
+      } else if (day.dayOfWeek === 6) {
+        if ((day.shifts[0] && day.shifts[0] !== stdStart) || (day.shifts[1] && day.shifts[1] !== stdEnd)) {
+          isModified = true;
+        }
+      } else {
+        if ((day.shifts[0] && day.shifts[0] !== stdStart) || (day.shifts[3] && day.shifts[3] !== stdEnd)) {
+          isModified = true;
+        }
+        if (day.shifts[2] === '13:30') {
+          // deCorrido is true
+          isModified = true;
+        }
+      }
+
+      if (isModified) {
+        let e1 = day.shifts[0] || '';
+        let s1 = day.shifts[1] || '';
+        let e2 = day.shifts[2] || '';
+        let s2 = day.shifts[3] || '';
+        if (isDom || isFer || day.dayOfWeek === 6) {
+          e2 = s1;
+          s2 = s1;
+        }
+
+        const h = calcularHorasDia(day.dateKey, (day.shifts[2] === '13:30'), s2 || stdEnd, isFer, e1 || stdStart, s1 || stdEnd, s1 || stdEnd);
+
+        const registro = {
+          dia: dayNum,
+          fecha: day.dateKey,
+          mes: month,
+          año: year,
+          semana: getSemana(dayNum, month, year),
+          e1: e1,
+          s1: s1,
+          e2: e2,
+          s2: s2,
+          total: h.total,
+          normales: h.normales,
+          extras: h.extras,
+          esCorrido: (day.shifts[2] === '13:30'),
+          esManual: isDom || isFer,
+          esDomingo: isDom,
+          esSabado: day.dayOfWeek === 6,
+          esFeriado: isFer,
+          motivo: day.comment || '',
+          horaFinal: s2 || stdEnd,
+          entradaManual: e1 || stdStart,
+          salidaManual: s1 || stdEnd,
+          sabadoSalida: s1 || stdEnd
+        };
+
+        const idx = registros.findIndex(r => r.dia === dayNum && r.mes === month && r.año === year);
+        if (idx !== -1) {
+          registros[idx] = registro;
+        } else {
+          registros.push(registro);
+        }
+      } else {
+        // Remove from registros if it was there
+        registros = registros.filter(r => !(r.dia === dayNum && r.mes === month && r.año === year));
+      }
+    });
+
+    registros.sort((a, b) => {
+      if (a.año !== b.año) return a.año - b.año;
+      if (a.mes !== b.mes) return a.mes - b.mes;
+      return a.dia - b.dia;
+    });
+
+    try {
+      localStorage.setItem('horasExtras_registros', JSON.stringify(registros));
+    } catch(e) {}
   }
 
   function saveToFirebaseOnly() {
     if (!isFirebaseInitialized) return;
-    const sanitizedName = sanitizeFirebaseKey(employeeInfo.name || "Anonimo");
-    const dbPath = `horas_extras/${sanitizedName}/${currentYear}_${currentMonth}`;
+    const sanitizedName = sanitizeFirebaseKey(employeeInfo.name || "MARCO_GARRIDO");
+    const dbPath = 'horas_extras/' + sanitizedName + '/registros';
     
     setSyncState('syncing');
     
-    db.ref(dbPath).set({
-      year: currentYear,
-      month: currentMonth,
-      employeeInfo: employeeInfo,
-      days: daysData.map(d => ({
-        dateKey: d.dateKey,
-        isFeriado: d.isFeriado,
-        comment: d.comment,
-        shifts: d.shifts
-      }))
-    })
+    db.ref(dbPath).set(registros)
     .then(() => {
       setSyncState('online');
     })
@@ -366,8 +612,8 @@ document.addEventListener('DOMContentLoaded', () => {
       firebaseListener.off();
     }
 
-    const sanitizedName = sanitizeFirebaseKey(employeeInfo.name || "Anonimo");
-    const dbPath = `horas_extras/${sanitizedName}/${currentYear}_${currentMonth}`;
+    const sanitizedName = sanitizeFirebaseKey(employeeInfo.name || "MARCO_GARRIDO");
+    const dbPath = 'horas_extras/' + sanitizedName + '/registros';
     firebaseListener = db.ref(dbPath);
 
     setSyncState('syncing');
@@ -375,112 +621,48 @@ document.addEventListener('DOMContentLoaded', () => {
     firebaseListener.on('value', (snapshot) => {
       const val = snapshot.val();
       if (val) {
-        // Sync from Firebase
-        daysData = daysData.map(d => {
-          const matched = val.days ? val.days.find(p => p.dateKey === d.dateKey) : null;
-          return {
-            ...d,
-            isFeriado: matched ? matched.isFeriado : false,
-            comment: matched ? matched.comment : '',
-            shifts: matched ? matched.shifts : ['', '', '', '', '', '', '', '']
-          };
-        });
-        const isFormFocused = document.activeElement && 
-                              (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'SELECT') && 
-                              document.activeElement.id.startsWith('form-');
-        
-        saveLocalOnly();
-        renderTable();
-        populateFormDaySelect();
-        if (!isFormFocused) {
+        if (JSON.stringify(registros) !== JSON.stringify(val)) {
+          registros = val;
+          registros.sort((a, b) => {
+            if (a.año !== b.año) return a.año - b.año;
+            if (a.mes !== b.mes) return a.mes - b.mes;
+            return a.dia - b.dia;
+          });
+          try {
+            localStorage.setItem('horasExtras_registros', JSON.stringify(registros));
+          } catch (e) {}
+          
+          const dates = generatePeriodDates(currentYear, currentMonth, completeWeek);
+          syncDaysDataFromRegistros(dates);
+          renderTable();
+          populateFormDaySelect();
           loadFormDayData();
         }
         setSyncState('online');
       } else {
-        // Cloud is empty for this period. Check if we have local storage data first
-        const key = getStorageKey();
-        const stored = localStorage.getItem(key);
-        const dates = generatePeriodDates(currentYear, currentMonth, completeWeek);
-        
-        if (stored) {
-          try {
-            const parsed = JSON.parse(stored);
-            daysData = dates.map(d => {
-              const matched = parsed.days.find(p => p.dateKey === d.dateKey);
-              return {
-                ...d,
-                isFeriado: matched ? matched.isFeriado : false,
-                comment: matched ? matched.comment : '',
-                shifts: matched ? matched.shifts : ['', '', '', '', '', '', '', '']
-              };
-            });
-            saveToFirebaseOnly(); // Push local data to cloud
-          } catch (e) {
-            loadMockOrEmpty(dates);
-          }
+        if (registros.length > 0) {
+          saveToFirebaseOnly();
         } else {
-          loadMockOrEmpty(dates);
+          setSyncState('online');
         }
       }
-    }, (err) => {
-      console.error("Firebase read failed", err);
+    }, (error) => {
+      console.error("Firebase sync error:", error);
       setSyncState('offline');
     });
   }
 
-  function loadMockOrEmpty(dates) {
-    generateEmptyDays(dates);
-    renderTable();
-    populateFormDaySelect();
-    loadFormDayData();
-  }
-
   function loadLocalStorageBackup(stored, dates) {
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        daysData = dates.map(d => {
-          const matched = parsed.days.find(p => p.dateKey === d.dateKey);
-          return {
-            ...d,
-            isFeriado: matched ? matched.isFeriado : false,
-            comment: matched ? matched.comment : '',
-            shifts: matched ? matched.shifts : ['', '', '', '', '', '', '', '']
-          };
-        });
-      } catch (e) {
-        loadMockOrEmptyLocal(dates);
-      }
-    } else {
-      loadMockOrEmptyLocal(dates);
-    }
+    const datesSeq = generatePeriodDates(currentYear, currentMonth, completeWeek);
+    syncDaysDataFromRegistros(datesSeq);
     renderTable();
     populateFormDaySelect();
     loadFormDayData();
   }
 
   function loadMockOrEmptyLocal(dates) {
-    generateEmptyDays(dates);
+    syncDaysDataFromRegistros(dates);
   }
-
-  function setSyncState(state) {
-    const syncStatusEl = document.getElementById('sync-status');
-    if (!syncStatusEl) return;
-    const syncLabel = syncStatusEl.querySelector('.label');
-    syncStatusEl.className = `sync-indicator ${state === 'online' ? '' : state}`;
-    if (state === 'online') {
-      syncLabel.textContent = 'Sincronizado';
-    } else if (state === 'offline') {
-      syncLabel.textContent = 'Sin conexión';
-    } else if (state === 'syncing') {
-      syncLabel.textContent = 'Sincronizando...';
-    }
-  }
-
-  function sanitizeFirebaseKey(key) {
-    return key.replace(/[\.\$\#\[\]\/]/g, '_').trim().replace(/\s+/g, '_').toUpperCase();
-  }
-
   // --- Form View Handlers ---
   function setupFormEventListeners() {
     // Dropdown change
