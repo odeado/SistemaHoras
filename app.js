@@ -1433,9 +1433,18 @@ document.addEventListener('DOMContentLoaded', () => {
       totalDecimalHours += c.totalDec;
       
       const day = daysData[idx];
-      // Sundays and holidays worked go to 100% overtime directly
-      if (day.dayOfWeek === 0 || day.isFeriado) {
+      if (day.dayOfWeek === 0) {
         overtime100Hours += c.totalDec;
+      } else if (day.isFeriado) {
+        let holidayOvertimeMins = 0;
+        for (let i = 4; i < 8; i += 2) {
+          const ent = timeToMin(day.shifts[i]);
+          const sal = timeToMin(day.shifts[i + 1]);
+          if (ent && sal && sal >= ent) {
+            holidayOvertimeMins += (sal - ent);
+          }
+        }
+        overtime100Hours += minToHrs(holidayOvertimeMins);
       }
     });
 
