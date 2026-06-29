@@ -1402,7 +1402,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <input type="text" 
             class="comment-input" 
             placeholder="Motivo de horas extraordinarias..." 
-            value="${day.comment}"
+            value="${day.comment || (isFeriado ? (FERIADOS[day.dateKey] || 'Feriado') : '')}"
             data-day-idx="${rIdx}"
           >
         </td>
@@ -2027,7 +2027,7 @@ document.addEventListener('DOMContentLoaded', () => {
           cellH.value = dayData.shifts[5] ? parseTimeToExcel(dayData.shifts[5]) : '';
           cellI.value = dayData.shifts[6] ? parseTimeToExcel(dayData.shifts[6]) : '';
           cellJ.value = dayData.shifts[7] ? parseTimeToExcel(dayData.shifts[7]) : '';
-          cellR.value = dayData.comment || '';
+          cellR.value = dayData.comment || (dayData.isFeriado ? (FERIADOS[dayData.dateKey] || 'Feriado') : '');
         } else {
           cellC.value = '';
           cellD.value = '';
