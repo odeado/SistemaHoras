@@ -359,6 +359,56 @@ document.addEventListener('DOMContentLoaded', () => {
     return { total, normales, extras };
   }
 
+  function migrateLegacyRecords() {
+    let modified = false;
+    if (!Array.isArray(registros)) return;
+    const lengthBefore = registros.length;
+
+    registros = registros.map(r => {
+      const dayName = getDiaSemanaRealLocal(r.fecha);
+      if (dayName === 'Lunes') {
+        const hasComment = r.motivo && r.motivo.trim() !== '';
+        if (!hasComment && (r.s2 === '19:30' || r.e1 === '09:30')) {
+          r.e1 = '09:00';
+          r.s1 = '13:30';
+          r.e2 = '15:00';
+          r.s2 = '19:00';
+          r.total = 8.5;
+          r.normales = 8.5;
+          r.extras = 0;
+          r.esCorrido = false;
+          modified = true;
+        }
+      }
+      return r;
+    });
+
+    registros = registros.filter(r => {
+      const dayName = getDiaSemanaRealLocal(r.fecha);
+      const isDom = r.esDomingo || dayName === 'Domingo';
+      const isSab = r.esSabado || dayName === 'Sábado';
+      const isFer = !!r.esFeriado;
+      
+      const hasComment = r.motivo && r.motivo.trim() !== '';
+      if (hasComment) return true;
+
+      if (isDom || isFer) {
+        return !!(r.e1 && r.s1 && r.e1 !== '' && r.s1 !== '');
+      }
+
+      const base = BASE_HORARIOS_SPANISH[dayName] || BASE_HORARIOS_SPANISH['Lunes'];
+      const matchesStandard = (r.e1 === base.e1 && r.s2 === base.s2 && !r.esCorrido);
+      return !matchesStandard;
+    });
+
+    if (modified || registros.length !== lengthBefore) {
+      try {
+        localStorage.setItem('horasExtras_registros', JSON.stringify(registros));
+      } catch(e) {}
+      saveToFirebaseOnly();
+    }
+  }
+
   function getStorageKey() {
     return 'horasExtras_registros';
   }
@@ -390,6 +440,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const localData = localStorage.getItem('horasExtras_registros');
       if (localData) {
         registros = JSON.parse(localData);
+        migrateLegacyRecords();
         registros.sort((a, b) => {
           if (a.año !== b.año) return a.año - b.año;
           if (a.mes !== b.mes) return a.mes - b.mes;
@@ -636,6 +687,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (val) {
         if (JSON.stringify(registros) !== JSON.stringify(val)) {
           registros = val;
+          migrateLegacyRecords();
           registros.sort((a, b) => {
             if (a.año !== b.año) return a.año - b.año;
             if (a.mes !== b.mes) return a.mes - b.mes;
