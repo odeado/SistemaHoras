@@ -822,7 +822,7 @@ document.addEventListener('DOMContentLoaded', () => {
       case 4:
       case 5: return "19:00"; // jueves, viernes
       case 6: return "12:30"; // sábado
-      default: return ""; // domingo
+      default: return "15:30"; // domingo
     }
   }
 
@@ -937,8 +937,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (isRestDay) {
       // Sunday/Holiday: 1 shift (index 0, 1)
-      entVal = day.shifts[0] || "";
-      salVal = day.shifts[1] || "";
+      entVal = day.shifts[0] || "09:30";
+      salVal = day.shifts[1] || "15:30";
       deCorrido = true; // Always continuous on rest days
       hasCustomHours = true; // Always show entrance for Sunday/Holiday
       
