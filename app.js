@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Standard daily normal hours (42-hour contract)
   const STANDARD_HOURS = {
-    1: 9.0, // lunes
+    1: 8.5, // lunes
     2: 7.5, // martes
     3: 7.5, // miércoles
     4: 8.0, // jueves
@@ -260,7 +260,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const BASE_HORARIOS_SPANISH = {
-    'Lunes': { e1: '09:00', s1: '13:30', e2: '15:00', s2: '19:30', base: 9.0 },
+    'Lunes': { e1: '09:00', s1: '13:30', e2: '15:00', s2: '19:00', base: 8.5 },
     'Martes': { e1: '09:30', s1: '13:30', e2: '15:00', s2: '18:30', base: 7.5 },
     'Miércoles': { e1: '09:30', s1: '13:30', e2: '15:00', s2: '18:30', base: 7.5 },
     'Jueves': { e1: '09:30', s1: '13:30', e2: '15:00', s2: '19:00', base: 8.0 },
@@ -829,7 +829,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function getStandardEndTime(dayOfWeek) {
     switch (dayOfWeek) {
-      case 1: return "19:30"; // lunes
+      case 1: return "19:00"; // lunes
       case 2:
       case 3: return "18:30"; // martes, miércoles
       case 4:
