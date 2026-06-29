@@ -650,6 +650,11 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch(e) {}
   }
 
+  function sanitizeFirebaseKey(key) {
+    if (!key) return "ANONIMO";
+    return key.replace(/[\.\$\#\[\]\/]/g, '_').trim().replace(/\s+/g, '_').toUpperCase();
+  }
+
   function saveToFirebaseOnly() {
     if (!isFirebaseInitialized) return;
     const sanitizedName = sanitizeFirebaseKey(employeeInfo.name || "MARCO_GARRIDO");
