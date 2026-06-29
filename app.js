@@ -135,7 +135,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const sidebarBackdrop = document.getElementById('sidebar-backdrop');
 
   // --- Initialization ---
-  initApp();
 
   function initApp() {
     // 1. Load theme preference
@@ -2423,4 +2422,6 @@ document.addEventListener('DOMContentLoaded', () => {
       ]
     };
   }
+  
+  initApp();
 });
