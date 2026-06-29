@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Standard daily normal hours (42-hour contract)
   const STANDARD_HOURS = {
-    1: 8.5, // lunes
+    1: 9.0, // lunes
     2: 7.5, // martes
     3: 7.5, // miércoles
     4: 8.0, // jueves
@@ -260,7 +260,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const BASE_HORARIOS_SPANISH = {
-    'Lunes': { e1: '09:30', s1: '13:30', e2: '15:00', s2: '19:30', base: 8.5 },
+    'Lunes': { e1: '09:00', s1: '13:30', e2: '15:00', s2: '19:30', base: 9.0 },
     'Martes': { e1: '09:30', s1: '13:30', e2: '15:00', s2: '18:30', base: 7.5 },
     'Miércoles': { e1: '09:30', s1: '13:30', e2: '15:00', s2: '18:30', base: 7.5 },
     'Jueves': { e1: '09:30', s1: '13:30', e2: '15:00', s2: '19:00', base: 8.0 },
@@ -528,16 +528,28 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       if (isModified) {
-        let e1 = day.shifts[0] || '';
-        let s1 = day.shifts[1] || '';
-        let e2 = day.shifts[2] || '';
-        let s2 = day.shifts[3] || '';
-        if (isDom || isFer || day.dayOfWeek === 6) {
+        let e1 = day.shifts[0] || stdStart;
+        let s1 = '';
+        let e2 = '';
+        let s2 = '';
+        const deCorrido = (day.shifts[2] === '13:30');
+
+        if (isDom || isFer) {
+          e1 = day.shifts[0] || '09:30';
+          s1 = day.shifts[1] || '15:30';
           e2 = s1;
           s2 = s1;
+        } else if (day.dayOfWeek === 6) {
+          s1 = day.shifts[1] || '12:30';
+          e2 = s1;
+          s2 = s1;
+        } else {
+          s1 = '13:30';
+          e2 = deCorrido ? '13:30' : '15:00';
+          s2 = day.shifts[3] || stdEnd;
         }
 
-        const h = calcularHorasDia(day.dateKey, (day.shifts[2] === '13:30'), s2 || stdEnd, isFer, e1 || stdStart, s1 || stdEnd, s1 || stdEnd);
+        const h = calcularHorasDia(day.dateKey, deCorrido, s2 || stdEnd, isFer, e1 || stdStart, s1 || stdEnd, s1 || stdEnd);
 
         const registro = {
           dia: dayNum,
@@ -552,7 +564,7 @@ document.addEventListener('DOMContentLoaded', () => {
           total: h.total,
           normales: h.normales,
           extras: h.extras,
-          esCorrido: (day.shifts[2] === '13:30'),
+          esCorrido: deCorrido,
           esManual: isDom || isFer,
           esDomingo: isDom,
           esSabado: day.dayOfWeek === 6,
@@ -809,8 +821,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function getStandardStartTime(dayOfWeek) {
     switch (dayOfWeek) {
+      case 1: return "09:00"; // lunes
       case 6: return "10:00"; // sábado
-      default: return "09:30"; // lunes a viernes, domingo
+      default: return "09:30"; // martes a viernes, domingo
     }
   }
 
