@@ -63,8 +63,8 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // --- State Variables ---
-  let currentYear = 2026;
-  let currentMonth = 4; // Mayo (0-indexed)
+  let currentYear = new Date().getFullYear();
+  let currentMonth = new Date().getMonth(); // Dynamic current month (0-indexed)
   let completeWeek = true;
   let daysData = []; // Array of day objects
   let registros = []; // Array of all historical flat records
@@ -171,6 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 3. Load initial values from controls
+    periodMonthSelect.value = currentMonth;
     currentYear = parseInt(periodYearSelect.value);
     currentMonth = parseInt(periodMonthSelect.value);
     completeWeek = completeWeekCheckbox.checked;
@@ -405,13 +406,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // 4. Populate daysData from registros
     syncDaysDataFromRegistros(dates);
 
-    // 5. If Firebase is initialized, start cloud sync
+    // 5. Render local data immediately for instant visibility
+    renderTable();
+    populateFormDaySelect();
+    loadFormDayData();
+
+    // 6. If Firebase is initialized, start cloud sync in background
     if (isFirebaseInitialized) {
       setupFirebaseSync();
-    } else {
-      renderTable();
-      populateFormDaySelect();
-      loadFormDayData();
     }
   }
 
