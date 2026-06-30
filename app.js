@@ -54,9 +54,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Standard daily normal hours (42-hour contract)
   const STANDARD_HOURS = {
     1: 8.5, // lunes
-    2: 7.5, // martes
+    2: 8.0, // martes
     3: 7.5, // miércoles
-    4: 8.0, // jueves
+    4: 7.5, // jueves
     5: 8.0, // viernes
     6: 2.5, // sábado
     0: 0.0  // domingo
@@ -261,9 +261,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const BASE_HORARIOS_SPANISH = {
     'Lunes': { e1: '09:00', s1: '13:30', e2: '15:00', s2: '19:00', base: 8.5 },
-    'Martes': { e1: '09:30', s1: '13:30', e2: '15:00', s2: '18:30', base: 7.5 },
+    'Martes': { e1: '09:30', s1: '13:30', e2: '15:00', s2: '19:00', base: 8.0 },
     'Miércoles': { e1: '09:30', s1: '13:30', e2: '15:00', s2: '18:30', base: 7.5 },
-    'Jueves': { e1: '09:30', s1: '13:30', e2: '15:00', s2: '19:00', base: 8.0 },
+    'Jueves': { e1: '09:30', s1: '13:30', e2: '15:00', s2: '18:30', base: 7.5 },
     'Viernes': { e1: '09:30', s1: '13:30', e2: '15:00', s2: '19:00', base: 8.0 },
     'Sábado': { e1: '10:00', s1: '12:30', e2: '12:30', s2: '12:30', base: 2.5 },
     'Domingo': { e1: '', s1: '', e2: '', s2: '', base: 0.0 }
@@ -285,8 +285,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function esFeriadoReal(fechaStr) {
-    if (!fechaStr) return false;
-    return FERIADOS[fechaStr] !== undefined;
+    return false;
   }
 
   function getSemana(diaNum, mes, año) {
@@ -493,12 +492,13 @@ document.addEventListener('DOMContentLoaded', () => {
         shifts = [
           matched.e1 || '', matched.s1 || '',
           matched.e2 || '', matched.s2 || '',
-          '', '', '', ''
+          matched.e3 || '', matched.s3 || '',
+          matched.e4 || '', matched.s4 || ''
         ];
       } else {
         // Defaults
         isFeriado = esFeriadoReal(dateKey);
-        if (!isFeriado && dayOfWeek !== 0) {
+        if (dayOfWeek !== 0) {
           const start = getStandardStartTime(dayOfWeek);
           const end = getStandardEndTime(dayOfWeek);
           if (dayOfWeek === 6) {
@@ -585,7 +585,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let s2 = '';
         const deCorrido = (day.shifts[2] === '13:30');
 
-        if (isDom || isFer) {
+        if (isDom) {
           e1 = day.shifts[0] || '09:30';
           s1 = day.shifts[1] || '15:30';
           e2 = s1;
@@ -612,6 +612,10 @@ document.addEventListener('DOMContentLoaded', () => {
           s1: s1,
           e2: e2,
           s2: s2,
+          e3: day.shifts[4] || '',
+          s3: day.shifts[5] || '',
+          e4: day.shifts[6] || '',
+          s4: day.shifts[7] || '',
           total: h.total,
           normales: h.normales,
           extras: h.extras,
@@ -771,6 +775,7 @@ document.addEventListener('DOMContentLoaded', () => {
     formCustomHours.addEventListener('change', () => {
       formHoursContainer.style.display = formCustomHours.checked ? 'grid' : 'none';
       saveFormDayData();
+      updateFormPreviewHours();
     });
  
     // Time input auto-formatting while typing and local real-time updating
@@ -783,6 +788,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const regex = /^([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$/;
           if (regex.test(val)) {
             saveFormDayDataLocal();
+            updateFormPreviewHours();
           }
         }
       });
@@ -812,6 +818,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (input === formIsFeriado) {
           loadFormDayData();
         }
+        updateFormPreviewHours();
       });
     });
  
@@ -819,6 +826,7 @@ document.addEventListener('DOMContentLoaded', () => {
     formComment.addEventListener('input', () => {
       parseTimesFromComment();
       saveFormDayDataLocal(); // Local real-time update
+      updateFormPreviewHours();
     });
  
     // Clear day in form
@@ -1019,7 +1027,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const stdStart = getStandardStartTime(day.dayOfWeek);
     const stdEnd = getStandardEndTime(day.dayOfWeek);
 
-    const isRestDay = (day.dayOfWeek === 0 || day.isFeriado);
+    const isRestDay = (day.dayOfWeek === 0);
 
     if (isRestDay) {
       // Sunday/Holiday: 1 shift (index 0, 1)
@@ -1059,6 +1067,88 @@ document.addEventListener('DOMContentLoaded', () => {
     // Set text input values for hours
     formEntTime.value = entVal || stdStart;
     formSalTime.value = salVal || stdEnd;
+    updateFormPreviewHours();
+  }
+
+  function updateFormPreviewHours() {
+    const dayIdx = parseInt(formDaySelect.value);
+    if (isNaN(dayIdx) || dayIdx < 0 || dayIdx >= daysData.length) return;
+    
+    const day = daysData[dayIdx];
+    const isFeriado = formFeriado.checked;
+    const deCorrido = formDeCorrido.checked;
+    const customizeEnt = formCustomHours.checked;
+    const entVal = formEntTime.value.trim();
+    const salVal = formSalTime.value.trim();
+    
+    const stdStart = getStandardStartTime(day.dayOfWeek);
+    const stdEnd = getStandardEndTime(day.dayOfWeek);
+    const finalEnt = entVal || stdStart;
+    const finalSal = salVal || stdEnd;
+    
+    let simulatedShifts = [...day.shifts];
+    const isDom = day.dayOfWeek === 0;
+    
+    if (isDom) {
+      if (salVal) {
+        simulatedShifts = [finalEnt, finalSal, "", "", "", "", "", ""];
+      } else {
+        simulatedShifts = ["", "", "", "", "", "", "", ""];
+      }
+    } else if (day.dayOfWeek === 6) {
+      if (customizeEnt || (salVal && salVal !== stdEnd)) {
+        simulatedShifts = [finalEnt, finalSal, "", "", "", "", "", ""];
+      } else {
+        simulatedShifts = [stdStart, stdEnd, "", "", "", "", "", ""];
+      }
+    } else {
+      const s1 = '13:30';
+      const e2 = deCorrido ? '13:30' : '15:00';
+      const s2 = salVal || stdEnd;
+      simulatedShifts = [finalEnt, s1, e2, s2, day.shifts[4] || "", day.shifts[5] || "", day.shifts[6] || "", day.shifts[7] || ""];
+    }
+    
+    const h = calcularHorasDia(day.dateKey, deCorrido, finalSal, isFeriado, finalEnt, simulatedShifts[1], simulatedShifts[1]);
+    
+    const parts = day.dateKey.split('-');
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    const targetWeekNum = getSemana(day.dayNum, month, year);
+    
+    let weeklyTotal = 0;
+    let weeklyNorm = 0;
+    
+    daysData.forEach((d, idx) => {
+      const p = d.dateKey.split('-');
+      const y = parseInt(p[0], 10);
+      const m = parseInt(p[1], 10) - 1;
+      const wNum = getSemana(d.dayNum, m, y);
+      
+      if (wNum === targetWeekNum) {
+        let dayTotalDec = 0;
+        if (idx === dayIdx) {
+          dayTotalDec = h.total;
+        } else {
+          const dec = calculateDayHours(d);
+          dayTotalDec = dec.totalDec;
+        }
+        weeklyTotal += dayTotalDec;
+        
+        if (d.dayOfWeek !== 0) {
+          weeklyNorm += STANDARD_HOURS[d.dayOfWeek];
+        }
+      }
+    });
+    
+    const weeklyExtras = weeklyTotal > weeklyNorm ? weeklyTotal - weeklyNorm : 0;
+    
+    const lblDayTotal = document.getElementById('form-preview-day-total');
+    const lblWeekAccum = document.getElementById('form-preview-week-accum');
+    const lblWeekExtra = document.getElementById('form-preview-week-extra');
+    
+    if (lblDayTotal) lblDayTotal.textContent = h.total.toFixed(1);
+    if (lblWeekAccum) lblWeekAccum.textContent = weeklyTotal.toFixed(1);
+    if (lblWeekExtra) lblWeekExtra.textContent = weeklyExtras.toFixed(1);
   }
 
   function saveFormDayDataLocal() {
@@ -1080,7 +1170,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const stdStart = getStandardStartTime(day.dayOfWeek);
     const stdEnd = getStandardEndTime(day.dayOfWeek);
     
-    const isRestDay = (isFeriado || day.dayOfWeek === 0);
+    const isRestDay = (day.dayOfWeek === 0);
     const finalEnt = entVal || stdStart;
     const finalSal = salVal || stdEnd;
     

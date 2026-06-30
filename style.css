@@ -330,7 +330,7 @@ body {
   overflow: auto;
   border-radius: 0.75rem;
   border: 1px solid var(--border-color);
-  max-height: 600px;
+  max-height: none;
   position: relative;
 }
 
