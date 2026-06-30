@@ -650,6 +650,22 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch(e) {}
   }
 
+  function setSyncState(state) {
+    const syncStatusEl = document.getElementById('sync-status');
+    if (!syncStatusEl) return;
+    const syncLabel = syncStatusEl.querySelector('.label') || syncStatusEl;
+    if (state === 'online') {
+      syncStatusEl.className = 'sync-indicator';
+      if (syncLabel) syncLabel.textContent = 'Sincronizado';
+    } else if (state === 'syncing') {
+      syncStatusEl.className = 'sync-indicator syncing';
+      if (syncLabel) syncLabel.textContent = 'Sincronizando...';
+    } else {
+      syncStatusEl.className = 'sync-indicator offline';
+      if (syncLabel) syncLabel.textContent = 'Sin conexión';
+    }
+  }
+
   function sanitizeFirebaseKey(key) {
     if (!key) return "ANONIMO";
     return key.replace(/[\.\$\#\[\]\/]/g, '_').trim().replace(/\s+/g, '_').toUpperCase();
