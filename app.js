@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
   ];
   
   // Standard daily normal hours (42-hour contract)
-  const STANDARD_HOURS = {
+  let STANDARD_HOURS = {
     1: 8.5, // lunes
     2: 8.0, // martes
     3: 7.5, // miércoles
@@ -176,6 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
     completeWeek = completeWeekCheckbox.checked;
 
     // 4. Load from LocalStorage/Firebase
+    loadBaseHorarios();
     loadData();
 
     // 5. Setup Event Listeners
@@ -224,6 +225,12 @@ document.addEventListener('DOMContentLoaded', () => {
     fileImportInput.addEventListener('change', importBackup);
     btnClearData.addEventListener('click', clearCurrentPeriodData);
 
+    // Modal buttons
+    const btnCancelModal = document.getElementById('modal-btn-cancel');
+    const btnSaveModal = document.getElementById('modal-btn-save');
+    if (btnCancelModal) btnCancelModal.addEventListener('click', closeBaseScheduleModal);
+    if (btnSaveModal) btnSaveModal.addEventListener('click', saveBaseScheduleModal);
+
     // Setup Form View Event Listeners
     setupFormEventListeners();
   }
@@ -259,7 +266,7 @@ document.addEventListener('DOMContentLoaded', () => {
     '2026-12-25': 'Navidad'
   };
 
-  const BASE_HORARIOS_SPANISH = {
+  let BASE_HORARIOS_SPANISH = {
     'Lunes': { e1: '09:00', s1: '13:30', e2: '15:00', s2: '19:00', base: 8.5 },
     'Martes': { e1: '09:30', s1: '13:30', e2: '15:00', s2: '19:00', base: 8.0 },
     'Miércoles': { e1: '09:30', s1: '13:30', e2: '15:00', s2: '18:30', base: 7.5 },
@@ -356,6 +363,170 @@ document.addEventListener('DOMContentLoaded', () => {
     const normales = total - extras;
 
     return { total, normales, extras };
+  }
+
+  let currentEditingDayName = '';
+
+  function renderSidebarBaseSchedules() {
+    const container = document.getElementById('base-schedules-grid');
+    if (!container) return;
+    
+    let sumBase = 0;
+    Object.values(STANDARD_HOURS).forEach(h => sumBase += h);
+    const totalLabel = document.getElementById('base-hours-total-label');
+    if (totalLabel) totalLabel.textContent = sumBase.toFixed(1) + ' hrs/sem';
+    
+    const days = [
+      { name: 'Lunes', label: 'LUN' },
+      { name: 'Martes', label: 'MAR' },
+      { name: 'Miércoles', label: 'MIÉ' },
+      { name: 'Jueves', label: 'JUE' },
+      { name: 'Viernes', label: 'VIE' },
+      { name: 'Sábado', label: 'SÁB' }
+    ];
+    
+    let html = '';
+    days.forEach(d => {
+      const schedule = BASE_HORARIOS_SPANISH[d.name];
+      if (!schedule) return;
+      
+      const isSat = d.name === 'Sábado';
+      const timeHtml = isSat 
+        ? `<div>${schedule.e1}-${schedule.s1}</div><div style="color: transparent; font-size: 0.6rem;">-</div>`
+        : `<div>${schedule.e1}-${schedule.s1}</div><div>${schedule.e2}-${schedule.s2}</div>`;
+        
+      html += `
+        <div style="background: white; padding: 0.4rem; border-radius: 4px; text-align: center; border: 1px solid var(--border-color); display: flex; flex-direction: column; justify-content: space-between;">
+          <div style="font-weight: 700; color: var(--text-secondary); margin-bottom: 2px;">${d.label}</div>
+          ${timeHtml}
+          <div style="font-weight: 600; color: var(--primary-color); margin-top: 2px;">${schedule.base.toFixed(1)}h</div>
+          <a href="#" class="edit-base-link" data-day-name="${d.name}" style="font-size: 0.58rem; color: var(--primary-color); text-decoration: underline; cursor: pointer; display: block; margin-top: 4px;">editar</a>
+        </div>
+      `;
+    });
+    
+    container.innerHTML = html;
+    
+    const editLinks = container.querySelectorAll('.edit-base-link');
+    editLinks.forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const dayName = e.target.dataset.dayName;
+        openBaseScheduleModal(dayName);
+      });
+    });
+  }
+
+  function openBaseScheduleModal(dayName) {
+    currentEditingDayName = dayName;
+    const schedule = BASE_HORARIOS_SPANISH[dayName];
+    if (!schedule) return;
+    
+    document.getElementById('modal-day-title').textContent = `Editar Horario Base: ${dayName}`;
+    document.getElementById('modal-e1').value = schedule.e1;
+    document.getElementById('modal-s1').value = schedule.s1;
+    document.getElementById('modal-e2').value = schedule.e2;
+    document.getElementById('modal-s2').value = schedule.s2;
+    document.getElementById('modal-base-hours').value = schedule.base;
+    
+    const modal = document.getElementById('base-schedule-modal');
+    if (modal) modal.style.display = 'flex';
+  }
+
+  function closeBaseScheduleModal() {
+    const modal = document.getElementById('base-schedule-modal');
+    if (modal) modal.style.display = 'none';
+  }
+
+  function saveBaseScheduleModal() {
+    if (!currentEditingDayName) return;
+    
+    const e1 = document.getElementById('modal-e1').value.trim();
+    const s1 = document.getElementById('modal-s1').value.trim();
+    const e2 = document.getElementById('modal-e2').value.trim();
+    const s2 = document.getElementById('modal-s2').value.trim();
+    const baseHrs = parseFloat(document.getElementById('modal-base-hours').value);
+    
+    if (isNaN(baseHrs) || baseHrs < 0) {
+      showStatus("Horas base inválidas", "danger");
+      return;
+    }
+    
+    const regex = /^([0-9]|0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$/;
+    if ((e1 && !regex.test(e1)) || (s1 && !regex.test(s1)) || (e2 && !regex.test(e2)) || (s2 && !regex.test(s2))) {
+      showStatus("Formato de hora inválido. Use HH:MM", "danger");
+      return;
+    }
+    
+    BASE_HORARIOS_SPANISH[currentEditingDayName] = { e1, s1, e2, s2, base: baseHrs };
+    
+    const dayMap = {
+      'Lunes': 1,
+      'Martes': 2,
+      'Miércoles': 3,
+      'Jueves': 4,
+      'Viernes': 5,
+      'Sábado': 6,
+      'Domingo': 0
+    };
+    const dayNum = dayMap[currentEditingDayName];
+    if (dayNum !== undefined) {
+      STANDARD_HOURS[dayNum] = baseHrs;
+    }
+    
+    try {
+      localStorage.setItem('horasExtras_horarioBase', JSON.stringify({
+        BASE_HORARIOS_SPANISH,
+        STANDARD_HOURS
+      }));
+    } catch(e) {}
+    
+    saveBaseHorariosToFirebase();
+    
+    renderSidebarBaseSchedules();
+    
+    const dates = generatePeriodDates(currentYear, currentMonth, completeWeek);
+    syncDaysDataFromRegistros(dates);
+    renderTable();
+    loadFormDayData();
+    updateFormPreviewHours();
+    
+    closeBaseScheduleModal();
+    showStatus(`Horario base de ${currentEditingDayName} actualizado con éxito.`, "success");
+  }
+
+  function saveBaseHorariosToFirebase() {
+    if (!isFirebaseInitialized) return;
+    const sanitizedName = sanitizeFirebaseKey(employeeInfo.name || "MARCO_GARRIDO");
+    const dbPath = 'horas_extras/' + sanitizedName + '/horario_base';
+    
+    setSyncState('syncing');
+    db.ref(dbPath).set({
+      BASE_HORARIOS_SPANISH,
+      STANDARD_HOURS
+    })
+    .then(() => {
+      setSyncState('online');
+    })
+    .catch((err) => {
+      console.error("Firebase write base failed", err);
+      setSyncState('offline');
+    });
+  }
+
+  function loadBaseHorarios() {
+    try {
+      const stored = localStorage.getItem('horasExtras_horarioBase');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed.BASE_HORARIOS_SPANISH && parsed.STANDARD_HOURS) {
+          BASE_HORARIOS_SPANISH = parsed.BASE_HORARIOS_SPANISH;
+          STANDARD_HOURS = parsed.STANDARD_HOURS;
+        }
+      }
+    } catch(e) {}
+    
+    renderSidebarBaseSchedules();
   }
 
   function migrateLegacyRecords() {
@@ -693,6 +864,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   let firebaseListener = null;
+  let firebaseBaseListener = null;
 
   function setupFirebaseSync() {
     if (!isFirebaseInitialized) return;
@@ -700,8 +872,39 @@ document.addEventListener('DOMContentLoaded', () => {
     if (firebaseListener) {
       firebaseListener.off();
     }
+    if (firebaseBaseListener) {
+      firebaseBaseListener.off();
+    }
 
     const sanitizedName = sanitizeFirebaseKey(employeeInfo.name || "MARCO_GARRIDO");
+    
+    // Base schedule sync
+    const baseDbPath = 'horas_extras/' + sanitizedName + '/horario_base';
+    firebaseBaseListener = db.ref(baseDbPath);
+    firebaseBaseListener.on('value', (snapshot) => {
+      const val = snapshot.val();
+      if (val && val.BASE_HORARIOS_SPANISH && val.STANDARD_HOURS) {
+        // Only override if actually changed
+        if (JSON.stringify(BASE_HORARIOS_SPANISH) !== JSON.stringify(val.BASE_HORARIOS_SPANISH)) {
+          BASE_HORARIOS_SPANISH = val.BASE_HORARIOS_SPANISH;
+          STANDARD_HOURS = val.STANDARD_HOURS;
+          try {
+            localStorage.setItem('horasExtras_horarioBase', JSON.stringify({
+              BASE_HORARIOS_SPANISH,
+              STANDARD_HOURS
+            }));
+          } catch(e) {}
+          renderSidebarBaseSchedules();
+          
+          const dates = generatePeriodDates(currentYear, currentMonth, completeWeek);
+          syncDaysDataFromRegistros(dates);
+          renderTable();
+          loadFormDayData();
+          updateFormPreviewHours();
+        }
+      }
+    });
+
     const dbPath = 'horas_extras/' + sanitizedName + '/registros';
     firebaseListener = db.ref(dbPath);
 
