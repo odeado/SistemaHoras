@@ -2049,25 +2049,25 @@ document.addEventListener('DOMContentLoaded', () => {
         cellB.value = diaNombre ? diaNombre.toLowerCase() : '';
 
         if (!isPadding && dayData) {
-          cellC.value = dayData.shifts[0] ? parseTimeToExcel(dayData.shifts[0]) : '';
-          cellD.value = dayData.shifts[1] ? parseTimeToExcel(dayData.shifts[1]) : '';
-          cellE.value = dayData.shifts[2] ? parseTimeToExcel(dayData.shifts[2]) : '';
-          cellF.value = dayData.shifts[3] ? parseTimeToExcel(dayData.shifts[3]) : '';
-          cellG.value = dayData.shifts[4] ? parseTimeToExcel(dayData.shifts[4]) : '';
-          cellH.value = dayData.shifts[5] ? parseTimeToExcel(dayData.shifts[5]) : '';
-          cellI.value = dayData.shifts[6] ? parseTimeToExcel(dayData.shifts[6]) : '';
-          cellJ.value = dayData.shifts[7] ? parseTimeToExcel(dayData.shifts[7]) : '';
-          cellR.value = dayData.comment || (dayData.isFeriado ? (FERIADOS[dayData.dateKey] || 'Feriado') : '');
+          cellC.value = parseTimeToExcel(dayData.shifts[0]);
+          cellD.value = parseTimeToExcel(dayData.shifts[1]);
+          cellE.value = parseTimeToExcel(dayData.shifts[2]);
+          cellF.value = parseTimeToExcel(dayData.shifts[3]);
+          cellG.value = parseTimeToExcel(dayData.shifts[4]);
+          cellH.value = parseTimeToExcel(dayData.shifts[5]);
+          cellI.value = parseTimeToExcel(dayData.shifts[6]);
+          cellJ.value = parseTimeToExcel(dayData.shifts[7]);
+          cellR.value = dayData.comment || (dayData.isFeriado ? (FERIADOS[dayData.dateKey] || 'Feriado') : '') || null;
         } else {
-          cellC.value = '';
-          cellD.value = '';
-          cellE.value = '';
-          cellF.value = '';
-          cellG.value = '';
-          cellH.value = '';
-          cellI.value = '';
-          cellJ.value = '';
-          cellR.value = '';
+          cellC.value = null;
+          cellD.value = null;
+          cellE.value = null;
+          cellF.value = null;
+          cellG.value = null;
+          cellH.value = null;
+          cellI.value = null;
+          cellJ.value = null;
+          cellR.value = null;
         }
 
         cellK.value = { formula: '(' + 'D' + r + '-' + 'C' + r + ')+(' + 'F' + r + '-' + 'E' + r + ')+(' + 'H' + r + '-' + 'G' + r + ')+(' + 'J' + r + '-' + 'I' + r + ')' };
