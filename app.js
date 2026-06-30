@@ -1278,7 +1278,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (isNaN(dayIdx) || dayIdx < 0 || dayIdx >= daysData.length) return;
     
     const day = daysData[dayIdx];
-    const isFeriado = formFeriado.checked;
+    const isFeriado = formIsFeriado.checked;
     const deCorrido = formDeCorrido.checked;
     const customizeEnt = formCustomHours.checked;
     const entVal = formEntTime.value.trim();
