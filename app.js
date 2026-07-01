@@ -1297,7 +1297,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     if (isFeriado && day.dayOfWeek !== 0) {
       // Weekday Holiday: worked hours in columns 3 & 4 (indices 4 & 5), columns 1 & 2 get standard hours
-      const baseSched = BASE_HORARIOS_SPANISH[day.dayName] || BASE_HORARIOS_SPANISH['Lunes'];
+      const capDayName = day.dayName.charAt(0).toUpperCase() + day.dayName.slice(1);
+      const baseSched = BASE_HORARIOS_SPANISH[capDayName] || BASE_HORARIOS_SPANISH['Lunes'];
       const e1 = baseSched.e1;
       const s1 = baseSched.s1;
       const e2 = baseSched.e2;
@@ -1325,43 +1326,32 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
     
-    const h = calculateDayHours({ shifts: simulatedShifts });
     
-    const parts = day.dateKey.split('-');
-    const year = parseInt(parts[0], 10);
-    const month = parseInt(parts[1], 10) - 1;
-    const targetWeekNum = getSemana(day.dayNum, month, year);
-    
-    let weeklyTotal = 0;
-    let weeklyNorm = 0;
-    let weeklyExtras = 0;
-    
-    daysData.forEach((d, idx) => {
-      const p = d.dateKey.split('-');
-      const y = parseInt(p[0], 10);
-      const m = parseInt(p[1], 10) - 1;
-      const wNum = getSemana(d.dayNum, m, y);
-      
-      if (wNum === targetWeekNum) {
-        let dayCalc;
-        if (idx === dayIdx) {
-          dayCalc = h;
-        } else {
-          dayCalc = calculateDayHours(d);
-        }
-        weeklyTotal += dayCalc.totalDec;
-        weeklyNorm += dayCalc.normalesDec;
-        weeklyExtras += dayCalc.extrasDec;
+    const simulatedDayCalcs = daysData.map((d, idx) => {
+      if (idx === dayIdx) {
+        // Construct simulated day object to pass dayOfWeek and dayName
+        return calculateDayHours({
+          shifts: simulatedShifts,
+          dayOfWeek: d.dayOfWeek,
+          isFeriado: isFeriado
+        });
+      } else {
+        return calculateDayHours(d);
       }
     });
+    
+    const weeks = groupWeeks(daysData);
+    const targetWeek = weeks.find(week => week.some(w => w.index === dayIdx));
+    const summary = calculateWeeklySummary(targetWeek, simulatedDayCalcs);
+    const dayCalc = simulatedDayCalcs[dayIdx];
     
     const lblDayTotal = document.getElementById('form-preview-day-total');
     const lblWeekAccum = document.getElementById('form-preview-week-accum');
     const lblWeekExtra = document.getElementById('form-preview-week-extra');
     
-    if (lblDayTotal) lblDayTotal.textContent = h.totalDec.toFixed(1);
-    if (lblWeekAccum) lblWeekAccum.textContent = weeklyTotal.toFixed(1);
-    if (lblWeekExtra) lblWeekExtra.textContent = weeklyExtras.toFixed(1);
+    if (lblDayTotal) lblDayTotal.textContent = dayCalc.totalDec.toFixed(1);
+    if (lblWeekAccum) lblWeekAccum.textContent = summary.total.toFixed(1);
+    if (lblWeekExtra) lblWeekExtra.textContent = summary.extras.toFixed(1);
   }
 
   function saveFormDayDataLocal() {
@@ -1389,7 +1379,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     if (day.isFeriado && day.dayOfWeek !== 0) {
       // Weekday Holiday: worked hours in columns 3 & 4 (indices 4 & 5), columns 1 & 2 get standard hours
-      const baseSched = BASE_HORARIOS_SPANISH[day.dayName] || BASE_HORARIOS_SPANISH['Lunes'];
+      const capDayName = day.dayName.charAt(0).toUpperCase() + day.dayName.slice(1);
+      const baseSched = BASE_HORARIOS_SPANISH[capDayName] || BASE_HORARIOS_SPANISH['Lunes'];
       const e1 = baseSched.e1;
       const s1 = baseSched.s1;
       const e2 = baseSched.e2;
@@ -1639,7 +1630,7 @@ document.addEventListener('DOMContentLoaded', () => {
       } else if (isFer) {
         const baseHrs = STANDARD_HOURS[d.dayOfWeek] || 0;
         weeklyBaseLimit += baseHrs;
-        weeklyTotalNormalWorked += d1;
+        weeklyTotalNormalWorked += baseHrs;
         extrasSemana100 += d2;
       } else {
         const baseHrs = STANDARD_HOURS[d.dayOfWeek] || 0;
