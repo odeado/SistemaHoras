@@ -476,15 +476,35 @@ tr.rest-day-worked .time-input, tr.rest-day-worked .comment-input {
 .col-summary {
   font-weight: 700;
   text-align: center;
-  background-color: rgba(0, 0, 0, 0.03);
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  padding: 4px;
 }
 
-tr.rest-day-free .col-summary {
-  background-color: rgba(0, 0, 0, 0.05);
+.col-summary .summary-label {
+  font-size: 0.6rem;
+  display: block;
+  color: var(--text-secondary);
+  font-weight: 800;
+  margin-bottom: 2px;
 }
 
-tr.rest-day-worked .col-summary {
-  background-color: rgba(255, 255, 255, 0.15);
+.col-summary.has-extras {
+  background-color: #fee2e2;
+  color: #ef4444;
+}
+
+.col-summary.has-extras .summary-label {
+  color: #b91c1c;
+}
+
+[data-theme="dark"] .col-summary.has-extras {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+}
+
+[data-theme="dark"] .col-summary.has-extras .summary-label {
+  color: #fca5a5;
 }
 
 /* Toggle Feriado Button */

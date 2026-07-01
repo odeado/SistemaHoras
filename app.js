@@ -1767,16 +1767,16 @@ document.addEventListener('DOMContentLoaded', () => {
       // Weekly summaries (O, P, Q) shown on Sundays (or end of week)
       if (summary) {
         html += `
-          <td class="col-summary" style="background-color: #f1f5f9; text-align: center; font-weight: 700; padding: 4px;" title="Total Acumulado de la Semana">
-            <span style="font-size: 0.6rem; display: block; color: #64748b; font-weight: 800; margin-bottom: 2px;">TOTAL SEM.</span>
+          <td class="col-summary" title="Total Acumulado de la Semana">
+            <span class="summary-label">TOTAL SEM.</span>
             ${summary.total.toFixed(2)}
           </td>
-          <td class="col-summary" style="background-color: #f1f5f9; text-align: center; padding: 4px;" title="Horas Base de la Semana">
-            <span style="font-size: 0.6rem; display: block; color: #64748b; font-weight: 800; margin-bottom: 2px;">BASE SEM.</span>
+          <td class="col-summary" title="Horas Base de la Semana">
+            <span class="summary-label">BASE SEM.</span>
             ${summary.norm.toFixed(2)}
           </td>
-          <td class="col-summary" style="background-color: ${summary.extras > 0 ? '#fee2e2' : '#f1f5f9'}; color: ${summary.extras > 0 ? '#ef4444' : 'inherit'}; font-weight: 800; text-align: center; padding: 4px;" title="Horas Extras de la Semana (Total - Base)">
-            <span style="font-size: 0.6rem; display: block; color: ${summary.extras > 0 ? '#b91c1c' : '#64748b'}; font-weight: 800; margin-bottom: 2px;">EXTRA SEM.</span>
+          <td class="col-summary ${summary.extras > 0 ? 'has-extras' : ''}" title="Horas Extras de la Semana (Total - Base)">
+            <span class="summary-label">EXTRA SEM.</span>
             ${summary.extras.toFixed(2)}
           </td>
         `;
