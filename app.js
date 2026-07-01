@@ -1104,23 +1104,17 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function getStandardStartTime(dayOfWeek) {
-    switch (dayOfWeek) {
-      case 1: return "09:00"; // lunes
-      case 6: return "10:00"; // sábado
-      default: return "09:30"; // martes a viernes, domingo
-    }
+    const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    const name = dayNames[dayOfWeek];
+    const sched = BASE_HORARIOS_SPANISH[name];
+    return sched ? sched.e1 : "";
   }
 
   function getStandardEndTime(dayOfWeek) {
-    switch (dayOfWeek) {
-      case 1: return "19:00"; // lunes
-      case 2:
-      case 3: return "18:30"; // martes, miércoles
-      case 4:
-      case 5: return "19:00"; // jueves, viernes
-      case 6: return "12:30"; // sábado
-      default: return "15:30"; // domingo
-    }
+    const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    const name = dayNames[dayOfWeek];
+    const sched = BASE_HORARIOS_SPANISH[name];
+    return sched ? (sched.s2 || sched.s1) : "";
   }
 
   function resetDayToDefault(day) {
@@ -1340,6 +1334,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     let weeklyTotal = 0;
     let weeklyNorm = 0;
+    let weeklyExtras = 0;
     
     daysData.forEach((d, idx) => {
       const p = d.dateKey.split('-');
@@ -1348,22 +1343,17 @@ document.addEventListener('DOMContentLoaded', () => {
       const wNum = getSemana(d.dayNum, m, y);
       
       if (wNum === targetWeekNum) {
-        let dayTotalDec = 0;
+        let dayCalc;
         if (idx === dayIdx) {
-          dayTotalDec = h.totalDec;
+          dayCalc = h;
         } else {
-          const dec = calculateDayHours(d);
-          dayTotalDec = dec.totalDec;
+          dayCalc = calculateDayHours(d);
         }
-        weeklyTotal += dayTotalDec;
-        
-        if (d.dayOfWeek !== 0) {
-          weeklyNorm += STANDARD_HOURS[d.dayOfWeek];
-        }
+        weeklyTotal += dayCalc.totalDec;
+        weeklyNorm += dayCalc.normalesDec;
+        weeklyExtras += dayCalc.extrasDec;
       }
     });
-    
-    const weeklyExtras = weeklyTotal > weeklyNorm ? weeklyTotal - weeklyNorm : 0;
     
     const lblDayTotal = document.getElementById('form-preview-day-total');
     const lblWeekAccum = document.getElementById('form-preview-week-accum');
