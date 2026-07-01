@@ -2453,13 +2453,6 @@ document.addEventListener('DOMContentLoaded', () => {
         cellM.numFmt = '#,##0.00;[Red]\(#,##0.00\)';
         cellN.numFmt = '#,##0.00;[Red]\(#,##0.00\)';
 
-        // Arial 10pt regular for all cell rows
-        const rowCells = [cellA, cellB, cellC, cellD, cellE, cellF, cellG, cellH, cellI, cellJ, cellK, cellL, cellM, cellN, cellR];
-        rowCells.forEach(cell => {
-          cell.font = { name: 'Arial', size: 10 };
-        });
-        cellN.font = { name: 'Arial', size: 10, bold: true };
-
         // Precise borders for daily row
         const isSundayOrHoliday = esDom || esFer;
         if (isSundayOrHoliday) {
@@ -2489,6 +2482,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Fills
         cellA.fill = fillWhite;
+        cellB.fill = fillWhite;
 
         let fill = null;
         const workedAny = !isPadding && dayData && dayData.shifts[0] && dayData.shifts[1];
@@ -2518,6 +2512,26 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
 
+        // Set fonts for A and B (always white background, so always black text)
+        cellA.font = { name: 'Arial', size: 10 };
+        cellB.font = { name: 'Arial', size: 10 };
+
+        // Set fonts for C to R, adapting color for red rows
+        const isRedRow = isSundayOrHoliday && workedAny;
+        const fontColor = isRedRow ? { argb: 'FFFFFF' } : undefined;
+        for (let col = 3; col <= 18; col++) {
+          const cell = worksheet.getRow(r).getCell(col);
+          const isBold = (col === 14); // Column N (total dec) is bold
+          const cellColor = (col === 18) ? undefined : fontColor;
+          
+          cell.font = {
+            name: 'Arial',
+            size: 10,
+            bold: isBold,
+            color: cellColor ? { argb: cellColor.argb } : undefined
+          };
+        }
+
         if (!isPadding && dayData) {
           if (isSundayOrHoliday) {
             weekBaseHours += 0;
@@ -2544,7 +2558,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
           const summaryCells = [cellO, cellP, cellQ];
           summaryCells.forEach(c => {
-            c.font = { name: 'Arial', size: 10, bold: true };
+            const isRed = isSundayOrHoliday && workedAny;
+            c.font = { 
+              name: 'Arial', 
+              size: 10, 
+              bold: true,
+              color: isRed ? { argb: 'FFFFFF' } : undefined
+            };
             if (c === cellQ) {
               c.alignment = undefined;
             } else {
