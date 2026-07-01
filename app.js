@@ -757,14 +757,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const deCorrido = (day.shifts[2] === '13:30');
 
         if (isDom) {
-          e1 = day.shifts[0] || '09:30';
-          s1 = day.shifts[1] || '15:30';
-          e2 = s1;
-          s2 = s1;
+          e1 = day.shifts[0] || '';
+          s1 = day.shifts[1] || '';
+          e2 = '';
+          s2 = '';
         } else if (day.dayOfWeek === 6) {
-          s1 = day.shifts[1] || '12:30';
-          e2 = s1;
-          s2 = s1;
+          e1 = day.shifts[0] || '';
+          s1 = day.shifts[1] || '';
+          e2 = '';
+          s2 = '';
         } else {
           s1 = '13:30';
           e2 = deCorrido ? '13:30' : '15:00';
@@ -2153,6 +2154,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const setBorder = setCellBorder;
 
       // Row 1
+      worksheet.mergeCells('A1:C1');
       worksheet.getCell('A1').value = 'EMELNOR S.A.';
       worksheet.getCell('A1').font = { name: 'Arial', size: 10, bold: true };
       worksheet.getCell('A1').fill = fillWhite;
@@ -2605,8 +2607,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const cell = worksheet.getCell(colName + '43');
         cell.font = { name: 'Arial', size: 10 };
         cell.fill = fillYellow;
+        cell.border = borderThinBox;
       }
-      worksheet.getCell('A43').border = borderThinBox;
 
       // Row 44 (empty spacer row)
       worksheet.getRow(44).height = 15.75;
@@ -2651,9 +2653,14 @@ document.addEventListener('DOMContentLoaded', () => {
       cellQ45.alignment = { horizontal: 'center' };
       cellQ45.border = borderMedium;
 
-      setCellBorder(worksheet.getCell('A45'), 'medium', null, null, null);
-      for (let col = 3; col <= 13; col++) {
-        setCellBorder(worksheet.getRow(45).getCell(col), 'medium', null, null, null);
+      // Continuous medium top border on row 45
+      for (let col = 1; col <= 18; col++) {
+        const cell = worksheet.getRow(45).getCell(col);
+        if (col >= 14 && col <= 17) {
+          cell.border = borderMedium;
+        } else {
+          setCellBorder(cell, 'medium', null, null, null);
+        }
       }
       worksheet.getCell('K45').alignment = { horizontal: 'center' };
 
