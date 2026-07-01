@@ -2535,7 +2535,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (!isPadding && dayData) {
-          if (isSundayOrHoliday) {
+          if (dayData.dayOfWeek === 0) {
             weekBaseHours += 0;
           } else {
             weekBaseHours += STANDARD_HOURS[dayData.dayOfWeek];
