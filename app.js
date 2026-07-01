@@ -1615,6 +1615,54 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
+  function calculateWeeklySummary(weekDays, dayCalcs) {
+    let weeklyBaseLimit = 0;
+    let weeklyTotalNormalWorked = 0;
+    let extrasSemana100 = 0;
+    let weeklyTotalWorked = 0;
+    
+    weekDays.forEach(w => {
+      const d = w.day;
+      const calc = dayCalcs[w.index];
+      weeklyTotalWorked += calc.totalDec;
+      
+      const isDom = d.dayOfWeek === 0;
+      const isFer = !!d.isFeriado;
+      
+      // Duration of shifts 1 & 2 in hours
+      const d1 = (getShiftDurationMins(d.shifts[0], d.shifts[1]) + getShiftDurationMins(d.shifts[2], d.shifts[3])) / 60;
+      // Duration of shifts 3 & 4 in hours
+      const d2 = (getShiftDurationMins(d.shifts[4], d.shifts[5]) + getShiftDurationMins(d.shifts[6], d.shifts[7])) / 60;
+      
+      if (isDom) {
+        extrasSemana100 += calc.totalDec;
+      } else if (isFer) {
+        const baseHrs = STANDARD_HOURS[d.dayOfWeek] || 0;
+        weeklyBaseLimit += baseHrs;
+        weeklyTotalNormalWorked += d1;
+        extrasSemana100 += d2;
+      } else {
+        const baseHrs = STANDARD_HOURS[d.dayOfWeek] || 0;
+        weeklyBaseLimit += baseHrs;
+        weeklyTotalNormalWorked += calc.totalDec;
+      }
+    });
+    
+    const normalesSemana = Math.min(weeklyTotalNormalWorked, weeklyBaseLimit);
+    const extrasSemana50 = Math.max(0, weeklyTotalNormalWorked - weeklyBaseLimit);
+    
+    const norm = parseFloat(normalesSemana.toFixed(4));
+    const extras = parseFloat((extrasSemana50 + extrasSemana100).toFixed(4));
+    
+    return {
+      total: parseFloat(weeklyTotalWorked.toFixed(4)),
+      norm,
+      extras,
+      extras50: parseFloat(extrasSemana50.toFixed(4)),
+      extras100: parseFloat(extrasSemana100.toFixed(4))
+    };
+  }
+
   // Group days into weeks, returning list of weeks with indices
   // Weeks run Monday to Sunday
   function groupWeeks(days) {
@@ -1652,25 +1700,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const sundayItem = week.find(w => w.day.dayOfWeek === 0) || week[week.length - 1];
       const sundayIdx = sundayItem.index;
 
-      // 1. Calculate weekly total worked decimal hours, normal hours, and extra hours directly from daily values
-      let weeklyTotalDec = 0;
-      let weeklyNorm = 0;
-      let weeklyExtras = 0;
-      week.forEach(w => {
-        weeklyTotalDec += dayCalcs[w.index].totalDec;
-        weeklyNorm += dayCalcs[w.index].normalesDec;
-        weeklyExtras += dayCalcs[w.index].extrasDec;
-      });
-      weeklyTotalDec = parseFloat(weeklyTotalDec.toFixed(4));
-      weeklyNorm = parseFloat(weeklyNorm.toFixed(4));
-      weeklyExtras = parseFloat(weeklyExtras.toFixed(4));
-
-      // Save summary for Sunday's index
-      weeklySummaries[sundayIdx] = {
-        total: weeklyTotalDec,
-        norm: weeklyNorm,
-        extras: weeklyExtras
-      };
+      weeklySummaries[sundayIdx] = calculateWeeklySummary(week, dayCalcs);
     });
 
     // Populate rows
@@ -1797,35 +1827,20 @@ document.addEventListener('DOMContentLoaded', () => {
     let totalNormalHours = 0;  // Sum of weekly P
     let totalExtraHours = 0;   // Sum of weekly Q
     let overtime100Hours = 0;  // Sunday and Holiday worked hours
+    let overtime50Hours = 0;   // Weekday overtime hours
 
     // Sum individual daily worked hours for decimal sum
-    dayCalcs.forEach((c, idx) => {
+    dayCalcs.forEach((c) => {
       totalDecimalHours += c.totalDec;
-      
-      const day = daysData[idx];
-      if (day.dayOfWeek === 0) {
-        overtime100Hours += c.totalDec;
-      } else if (day.isFeriado) {
-        let holidayOvertimeMins = 0;
-        for (let i = 4; i < 8; i += 2) {
-          const ent = timeToMin(day.shifts[i]);
-          const sal = timeToMin(day.shifts[i + 1]);
-          if (ent && sal && sal >= ent) {
-            holidayOvertimeMins += (sal - ent);
-          }
-        }
-        overtime100Hours += minToHrs(holidayOvertimeMins);
-      }
     });
 
     // Sum weekly columns from summaries
     Object.values(weeklySummaries).forEach(s => {
       totalNormalHours += s.norm;
       totalExtraHours += s.extras;
+      overtime50Hours += s.extras50;
+      overtime100Hours += s.extras100;
     });
-
-    // 50% overtime is: total extra hours - 100% overtime hours (min 0)
-    let overtime50Hours = Math.max(0, totalExtraHours - overtime100Hours);
 
     // Update Totals Cards
     metricTotalWorked.textContent = totalDecimalHours.toFixed(2);
