@@ -771,7 +771,7 @@ document.addEventListener('DOMContentLoaded', () => {
           s2 = day.shifts[3] || stdEnd;
         }
 
-        const h = calcularHorasDia(day.dateKey, deCorrido, s2 || stdEnd, isFer, e1 || stdStart, s1 || stdEnd, s1 || stdEnd);
+        const h = calcularHorasRegistro(day, isFer);
 
         const registro = {
           dia: dayNum,
@@ -1232,12 +1232,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const isRestDay = (day.dayOfWeek === 0);
 
-    if (isRestDay) {
-      // Sunday/Holiday: 1 shift (index 0, 1)
-      entVal = day.shifts[0] || "09:30";
-      salVal = day.shifts[1] || "15:30";
-      deCorrido = true; // Always continuous on rest days
-      hasCustomHours = true; // Always show entrance for Sunday/Holiday
+    if (day.isFeriado && day.dayOfWeek !== 0) {
+      // Weekday Holiday: worked hours are in columns 3 & 4 (indices 4 & 5)
+      entVal = day.shifts[4] || "";
+      salVal = day.shifts[5] || "";
+      deCorrido = true;
+      hasCustomHours = true;
+      
+      const deCorridoWrapper = document.getElementById('form-de-corrido-wrapper');
+      if (deCorridoWrapper) deCorridoWrapper.style.display = 'none';
+    } else if (isRestDay) {
+      // Sunday: worked hours are in columns 1 & 2 (indices 0 & 1), empty by default
+      entVal = day.shifts[0] || "";
+      salVal = day.shifts[1] || "";
+      deCorrido = true;
+      hasCustomHours = true;
       
       const deCorridoWrapper = document.getElementById('form-de-corrido-wrapper');
       if (deCorridoWrapper) deCorridoWrapper.style.display = 'none';
@@ -1292,9 +1301,19 @@ document.addEventListener('DOMContentLoaded', () => {
     let simulatedShifts = [...day.shifts];
     const isDom = day.dayOfWeek === 0;
     
-    if (isDom) {
+    if (isFeriado && day.dayOfWeek !== 0) {
+      // Weekday Holiday: worked hours in columns 3 & 4 (indices 4 & 5), columns 1 & 2 get standard hours
+      const baseSched = BASE_HORARIOS_SPANISH[day.dayName] || BASE_HORARIOS_SPANISH['Lunes'];
+      const e1 = baseSched.e1;
+      const s1 = baseSched.s1;
+      const e2 = baseSched.e2;
+      const s2 = baseSched.s2;
+      const e3 = entVal || "";
+      const s3 = salVal || "";
+      simulatedShifts = [e1, s1, e2, s2, e3, s3, "", ""];
+    } else if (isDom) {
       if (salVal) {
-        simulatedShifts = [finalEnt, finalSal, "", "", "", "", "", ""];
+        simulatedShifts = [entVal || "09:30", salVal, "", "", "", "", "", ""];
       } else {
         simulatedShifts = ["", "", "", "", "", "", "", ""];
       }
@@ -1305,13 +1324,14 @@ document.addEventListener('DOMContentLoaded', () => {
         simulatedShifts = [stdStart, stdEnd, "", "", "", "", "", ""];
       }
     } else {
-      const s1 = '13:30';
-      const e2 = deCorrido ? '13:30' : '15:00';
-      const s2 = salVal || stdEnd;
-      simulatedShifts = [finalEnt, s1, e2, s2, day.shifts[4] || "", day.shifts[5] || "", day.shifts[6] || "", day.shifts[7] || ""];
+      if (deCorrido) {
+        simulatedShifts = [finalEnt, "13:30", "13:30", finalSal, "", "", "", ""];
+      } else {
+        simulatedShifts = [finalEnt, "13:30", "15:00", finalSal, "", "", "", ""];
+      }
     }
     
-    const h = calcularHorasDia(day.dateKey, deCorrido, finalSal, isFeriado, finalEnt, simulatedShifts[1], simulatedShifts[1]);
+    const h = calculateDayHours({ shifts: simulatedShifts });
     
     const parts = day.dateKey.split('-');
     const year = parseInt(parts[0], 10);
@@ -1330,7 +1350,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (wNum === targetWeekNum) {
         let dayTotalDec = 0;
         if (idx === dayIdx) {
-          dayTotalDec = h.total;
+          dayTotalDec = h.totalDec;
         } else {
           const dec = calculateDayHours(d);
           dayTotalDec = dec.totalDec;
@@ -1349,7 +1369,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const lblWeekAccum = document.getElementById('form-preview-week-accum');
     const lblWeekExtra = document.getElementById('form-preview-week-extra');
     
-    if (lblDayTotal) lblDayTotal.textContent = h.total.toFixed(1);
+    if (lblDayTotal) lblDayTotal.textContent = h.totalDec.toFixed(1);
     if (lblWeekAccum) lblWeekAccum.textContent = weeklyTotal.toFixed(1);
     if (lblWeekExtra) lblWeekExtra.textContent = weeklyExtras.toFixed(1);
   }
@@ -1377,10 +1397,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const finalEnt = entVal || stdStart;
     const finalSal = salVal || stdEnd;
     
-    if (isRestDay) {
-      // Only save shift on Sunday/Holiday if there is actual worked exit time or motive
-      if (salVal || motivo) {
-        day.shifts = [finalEnt, finalSal, "", "", "", "", "", ""];
+    if (day.isFeriado && day.dayOfWeek !== 0) {
+      // Weekday Holiday: worked hours in columns 3 & 4 (indices 4 & 5), columns 1 & 2 get standard hours
+      const baseSched = BASE_HORARIOS_SPANISH[day.dayName] || BASE_HORARIOS_SPANISH['Lunes'];
+      const e1 = baseSched.e1;
+      const s1 = baseSched.s1;
+      const e2 = baseSched.e2;
+      const s2 = baseSched.s2;
+      
+      const e3 = entVal || "";
+      const s3 = salVal || "";
+      
+      day.shifts = [e1, s1, e2, s2, e3, s3, "", ""];
+    } else if (isRestDay) {
+      // Sunday: worked hours in columns 1 & 2 (indices 0 & 1), empty if no salVal (exit)
+      if (salVal) {
+        day.shifts = [entVal || "09:30", salVal, "", "", "", "", "", ""];
       } else {
         day.shifts = ["", "", "", "", "", "", "", ""];
       }
@@ -1501,6 +1533,49 @@ document.addEventListener('DOMContentLoaded', () => {
     return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
   }
 
+  function getShiftDurationMins(entStr, salStr) {
+    if (!entStr || !salStr) return 0;
+    const ent = timeToMin(entStr);
+    const sal = timeToMin(salStr);
+    if (ent === null || sal === null) return 0;
+    return sal >= ent ? (sal - ent) : 0;
+  }
+
+  function calcularHorasRegistro(day, isFer) {
+    const calc = calculateDayHours(day);
+    const isDom = day.dayOfWeek === 0;
+    
+    if (isDom) {
+      return {
+        total: calc.totalDec,
+        normales: 0,
+        extras: calc.totalDec
+      };
+    }
+    
+    if (isFer) {
+      const baseHrs = STANDARD_HOURS[day.dayOfWeek] || 0;
+      const workedMins = getShiftDurationMins(day.shifts[4], day.shifts[5]);
+      const workedHrs = parseFloat((workedMins / 60).toFixed(4));
+      return {
+        total: baseHrs + workedHrs,
+        normales: baseHrs,
+        extras: workedHrs
+      };
+    }
+    
+    const baseHrs = STANDARD_HOURS[day.dayOfWeek] || 0;
+    const total = calc.totalDec;
+    const extras = total > baseHrs ? total - baseHrs : 0;
+    const normales = total - extras;
+    
+    return {
+      total,
+      normales,
+      extras
+    };
+  }
+
   // Calculate day worked minutes and decimal hours
   function calculateDayHours(day) {
     let totalMins = 0;
@@ -1596,8 +1671,8 @@ document.addEventListener('DOMContentLoaded', () => {
       let weeklyNorm = 0;
       week.forEach(w => {
         const d = w.day;
-        if (d.dayOfWeek === 0 || d.isFeriado) {
-          // Sunday and Holidays have 0 normal hours
+        if (d.dayOfWeek === 0) {
+          // Sunday has 0 normal hours
           weeklyNorm += 0;
         } else {
           weeklyNorm += STANDARD_HOURS[d.dayOfWeek];
