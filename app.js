@@ -1576,50 +1576,52 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  // Calculate day worked minutes and decimal hours
   function calculateDayHours(day) {
-    let totalMins = 0;
+    const isDom = day.dayOfWeek === 0;
+    const isFer = !!day.isFeriado;
     
-    // Loop through 4 shifts (entries at indices 0, 2, 4, 6 and exits at 1, 3, 5, 7)
-    for (let i = 0; i < 8; i += 2) {
-      const entStr = day.shifts[i];
-      const salStr = day.shifts[i + 1];
-      
-      const ent = timeToMin(entStr);
-      const sal = timeToMin(salStr);
-      
-      if (ent !== null && sal !== null) {
-        if (sal >= ent) {
-          totalMins += (sal - ent);
-        } else {
-          // Wrap around midnight (unlikely but supported)
-          totalMins += ((1440 - ent) + sal);
-        }
-      }
+    // Duration of 1st and 2nd shifts (indices 0, 1, 2, 3)
+    const d1 = getShiftDurationMins(day.shifts[0], day.shifts[1]) + getShiftDurationMins(day.shifts[2], day.shifts[3]);
+    // Duration of 3rd and 4th shifts (indices 4, 5, 6, 7)
+    const d2 = getShiftDurationMins(day.shifts[4], day.shifts[5]) + getShiftDurationMins(day.shifts[6], day.shifts[7]);
+    
+    let totalMins = d1 + d2;
+    let normalesMins = 0;
+    let extrasMins = 0;
+    
+    if (isDom) {
+      normalesMins = 0;
+      extrasMins = totalMins;
+    } else if (isFer) {
+      normalesMins = d1;
+      extrasMins = d2;
+    } else if (day.dayOfWeek === 6) {
+      const baseMins = 2.5 * 60;
+      normalesMins = Math.min(d1, baseMins);
+      extrasMins = Math.max(0, d1 - baseMins) + d2;
+    } else {
+      const baseHrs = STANDARD_HOURS[day.dayOfWeek] || 8.0;
+      const baseMins = baseHrs * 60;
+      normalesMins = Math.min(d1, baseMins);
+      extrasMins = Math.max(0, d1 - baseMins) + d2;
     }
-
-    if (totalMins === 0) {
-      return {
-        hasHours: false,
-        timeStr: "",
-        h: 0,
-        minDec: 0,
-        totalDec: 0
-      };
-    }
-
+    
+    const totalDec = parseFloat((totalMins / 60).toFixed(4));
+    const normalesDec = parseFloat((normalesMins / 60).toFixed(4));
+    const extrasDec = parseFloat((extrasMins / 60).toFixed(4));
+    
     const h = Math.floor(totalMins / 60);
     const mins = totalMins % 60;
     const minDec = parseFloat((mins / 60).toFixed(4));
-    // Match excel: HOUR(K) + MINUTE(K)/60
-    const totalDec = parseFloat((h + minDec).toFixed(4));
-
+    
     return {
-      hasHours: true,
-      timeStr: minToTimeStr(totalMins),
+      hasHours: totalMins > 0,
+      timeStr: totalMins > 0 ? minToTimeStr(totalMins) : "",
       h,
       minDec,
-      totalDec
+      totalDec,
+      normalesDec,
+      extrasDec
     };
   }
 
@@ -1660,28 +1662,17 @@ document.addEventListener('DOMContentLoaded', () => {
       const sundayItem = week.find(w => w.day.dayOfWeek === 0) || week[week.length - 1];
       const sundayIdx = sundayItem.index;
 
-      // 1. Calculate weekly total worked decimal hours (Sum of N)
+      // 1. Calculate weekly total worked decimal hours, normal hours, and extra hours directly from daily values
       let weeklyTotalDec = 0;
+      let weeklyNorm = 0;
+      let weeklyExtras = 0;
       week.forEach(w => {
         weeklyTotalDec += dayCalcs[w.index].totalDec;
+        weeklyNorm += dayCalcs[w.index].normalesDec;
+        weeklyExtras += dayCalcs[w.index].extrasDec;
       });
       weeklyTotalDec = parseFloat(weeklyTotalDec.toFixed(4));
-
-      // 2. Calculate weekly normal hours (Sum of standard hours for active days)
-      let weeklyNorm = 0;
-      week.forEach(w => {
-        const d = w.day;
-        if (d.dayOfWeek === 0) {
-          // Sunday has 0 normal hours
-          weeklyNorm += 0;
-        } else {
-          weeklyNorm += STANDARD_HOURS[d.dayOfWeek];
-        }
-      });
       weeklyNorm = parseFloat(weeklyNorm.toFixed(4));
-
-      // 3. Calculate weekly extras (Total - Norm)
-      let weeklyExtras = Math.max(0, weeklyTotalDec - weeklyNorm);
       weeklyExtras = parseFloat(weeklyExtras.toFixed(4));
 
       // Save summary for Sunday's index
