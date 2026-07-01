@@ -396,7 +396,7 @@ document.addEventListener('DOMContentLoaded', () => {
         : `<div>${schedule.e1}-${schedule.s1}</div><div>${schedule.e2}-${schedule.s2}</div>`;
         
       html += `
-        <div style="background: white; padding: 0.4rem; border-radius: 4px; text-align: center; border: 1px solid var(--border-color); display: flex; flex-direction: column; justify-content: space-between;">
+        <div style="background: var(--input-bg); padding: 0.4rem; border-radius: 4px; text-align: center; border: 1px solid var(--border-color); display: flex; flex-direction: column; justify-content: space-between;">
           <div style="font-weight: 700; color: var(--text-secondary); margin-bottom: 2px;">${d.label}</div>
           ${timeHtml}
           <div style="font-weight: 600; color: var(--primary-color); margin-top: 2px;">${schedule.base.toFixed(1)}h</div>
@@ -1800,8 +1800,8 @@ document.addEventListener('DOMContentLoaded', () => {
         </td>
         <td class="center" style="padding: 4px !important;">
           <div style="display: flex; gap: 4px; justify-content: center; align-items: center;">
-            <button class="btn-toggle-feriado" data-day-idx="${rIdx}" title="${isFeriado ? 'Marcar como Laborable' : 'Marcar como Feriado'}" style="padding: 4px 6px; font-size: 0.75rem;">
-              ${isFeriado ? '☀️ Lab' : '🎈 Fer'}
+            <button class="btn-edit-day-row" data-day-idx="${rIdx}" title="Editar Día" style="padding: 4px 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer; background: transparent; border: 1px solid var(--border-color); color: var(--text-color); border-radius: 4px; line-height: 1; transition: all var(--transition-fast);">
+              ✏️ Editar
             </button>
             <button class="btn-delete-day" data-day-idx="${rIdx}" title="Limpiar Día" style="background-color: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; padding: 4px 6px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; line-height: 1;">
               🗑️
@@ -1875,10 +1875,23 @@ document.addEventListener('DOMContentLoaded', () => {
       inp.addEventListener('change', handleCommentChange);
     });
 
-    // Handle Feriado toggle button click
-    const toggleFeriadoBtns = payrollTbody.querySelectorAll('.btn-toggle-feriado');
-    toggleFeriadoBtns.forEach(btn => {
-      btn.addEventListener('click', handleFeriadoToggle);
+    // Handle Edit Day button click
+    const editDayRowBtns = payrollTbody.querySelectorAll('.btn-edit-day-row');
+    editDayRowBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const btnEl = e.target.closest('.btn-edit-day-row');
+        if (!btnEl) return;
+        const dayIdx = parseInt(btnEl.dataset.dayIdx);
+        if (!isNaN(dayIdx)) {
+          formDaySelect.value = String(dayIdx);
+          loadFormDayData();
+          // Scroll to the editing panel smoothly
+          const panel = document.getElementById('panel-form-content');
+          if (panel) {
+            panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }
+      });
     });
 
     // Handle Delete Day button click
