@@ -2064,7 +2064,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Column widths
       const columns = [
-        { key: 'A', width: 13 },
+        { key: 'A', width: 6 },
         { key: 'B', width: 13 },
         { key: 'C', width: 13 },
         { key: 'D', width: 13 },
@@ -2093,7 +2093,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const minutes = parseInt(parts[1], 10) || 0;
         return (hours * 60 + minutes) / 1440;
       };
-
+      // Helper to format Chilean RUT
+      const formatRut = (rutStr) => {
+        if (!rutStr) return "";
+        let clean = rutStr.toString().replace(/[^0-9kK]/g, '');
+        if (clean.length < 2) return rutStr;
+        let body = clean.slice(0, -1);
+        let dv = clean.slice(-1).toUpperCase();
+        let formattedBody = body.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        return `${formattedBody}-${dv}`;
+      };
       const borderThinBox = {
         top: { style: 'thin' },
         left: { style: 'thin' },
@@ -2235,9 +2244,9 @@ document.addEventListener('DOMContentLoaded', () => {
       worksheet.getCell('B8').numFmt = 'mmm-yy';
       worksheet.getCell('B8').font = { name: 'Arial', size: 12, bold: true };
 
-      worksheet.getCell('C8').value = employeeInfo.card ? parseInt(employeeInfo.card, 10) : '';
+      worksheet.getCell('C8').value = formatRut(employeeInfo.card);
       worksheet.getCell('C8').fill = fillGreen;
-      worksheet.getCell('C8').numFmt = '#,##0';
+      worksheet.getCell('C8').numFmt = '@';
       worksheet.getCell('C8').font = { name: 'Arial', size: 12 };
       worksheet.getCell('C8').alignment = { horizontal: 'center' };
       setCellBorder(worksheet.getCell('C8'), null, null, 'medium', null);
@@ -2669,14 +2678,7 @@ document.addEventListener('DOMContentLoaded', () => {
         cell.font = { name: 'Arial', size: 10 };
       }
       worksheet.getCell('L47').alignment = { horizontal: 'center' };
-      worksheet.getCell('Q47').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCC00' } };
       
-      for (let col = 1; col <= 17; col++) {
-        const cell = worksheet.getRow(47).getCell(col);
-        cell.border = { top: { style: 'medium' } };
-      }
-      worksheet.getCell('A47').border = { top: { style: 'medium' }, left: { style: 'medium' } };
-
       // Row 48
       for (let col = 1; col <= 18; col++) {
         const colName = colNames[col - 1];
@@ -2688,7 +2690,6 @@ document.addEventListener('DOMContentLoaded', () => {
       worksheet.getCell('B48').alignment = { horizontal: 'left' };
       worksheet.getCell('L48').alignment = { horizontal: 'center' };
       worksheet.getCell('R48').alignment = { horizontal: 'left' };
-      worksheet.getCell('Q48').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCC00' } };
 
       // Row 49
       for (let col = 1; col <= 18; col++) {
@@ -2699,7 +2700,6 @@ document.addEventListener('DOMContentLoaded', () => {
       worksheet.getCell('A49').value = 'extraordinarias aquí expuestas  son  las  únicas   horas trabajadas  con  autorización  del  empleador  y consecuentemente  reconoce que son las que deben  ser canceladas como tal.';
       worksheet.getCell('A49').alignment = { horizontal: 'left' };
       worksheet.getCell('L49').alignment = { horizontal: 'center' };
-      worksheet.getCell('Q49').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCC00' } };
 
       // Row 50
       for (let col = 1; col <= 18; col++) {
@@ -2712,8 +2712,6 @@ document.addEventListener('DOMContentLoaded', () => {
       for (let col = 1; col <= 17; col++) {
         worksheet.getRow(50).getCell(col).alignment = { horizontal: 'left' };
       }
-      worksheet.getCell('Q50').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCC00' } };
-      worksheet.getCell('A50').border = { left: { style: 'medium' } };
 
       // Row 51
       for (let col = 1; col <= 18; col++) {
@@ -2723,8 +2721,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       worksheet.getCell('A51').value = 'expresando su conformidad con los cálculos y demás datos indicados. ';
       worksheet.getCell('L51').alignment = { horizontal: 'center' };
-      worksheet.getCell('Q51').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCC00' } };
-      worksheet.getCell('A51').border = { left: { style: 'medium' } };
 
       // Row 52
       for (let col = 1; col <= 18; col++) {
@@ -2732,10 +2728,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const cell = worksheet.getCell(colName + '52');
         cell.font = { name: 'Arial', size: 10 };
       }
-      worksheet.getCell('R52').value = '________________________________';
       worksheet.getCell('L52').alignment = { horizontal: 'center' };
-      worksheet.getCell('Q52').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCC00' } };
-      worksheet.getCell('A52').border = { left: { style: 'medium' } };
 
       // Row 53
       worksheet.getRow(53).height = 15.75;
@@ -2748,8 +2741,6 @@ document.addEventListener('DOMContentLoaded', () => {
       worksheet.getCell('R53').font = { name: 'Arial', size: 10, bold: true };
       worksheet.getCell('L53').alignment = { horizontal: 'center' };
       worksheet.getCell('R53').alignment = { horizontal: 'left' };
-      worksheet.getCell('Q53').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCC00' } };
-      worksheet.getCell('A53').border = { left: { style: 'medium' } };
 
       // Row 54
       for (let col = 1; col <= 18; col++) {
@@ -2758,9 +2749,6 @@ document.addEventListener('DOMContentLoaded', () => {
         cell.font = { name: 'Arial', size: 10 };
       }
       worksheet.getCell('L54').alignment = { horizontal: 'center' };
-      worksheet.getCell('Q54').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCC00' } };
-      worksheet.getCell('A54').border = { left: { style: 'medium' } };
-      worksheet.getCell('R54').border = { top: { style: 'medium' }, right: { style: 'medium' } };
 
       // Row 55
       for (let col = 1; col <= 18; col++) {
@@ -2771,7 +2759,6 @@ document.addEventListener('DOMContentLoaded', () => {
       worksheet.getCell('B55').value = 'Firma Funcionario';
       worksheet.getCell('J55').value = 'Firma Jefe Directo';
       worksheet.getCell('R55').alignment = { horizontal: 'left' };
-      worksheet.getCell('Q55').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCC00' } };
       
       worksheet.getCell('B55').font = { name: 'Arial', size: 10, bold: true };
       worksheet.getCell('C55').font = { name: 'Arial', size: 10, bold: true };
@@ -2793,9 +2780,6 @@ document.addEventListener('DOMContentLoaded', () => {
       worksheet.getCell('N55').border = { top: { style: 'thin' } };
       worksheet.getCell('O55').border = { top: { style: 'thin' } };
 
-      worksheet.getCell('A55').border = { left: { style: 'medium' } };
-      worksheet.getCell('R55').border = { right: { style: 'medium' } };
-
       // Row 56
       for (let col = 1; col <= 18; col++) {
         const colName = colNames[col - 1];
@@ -2805,23 +2789,51 @@ document.addEventListener('DOMContentLoaded', () => {
       worksheet.getCell('K56').alignment = { horizontal: 'center' };
       worksheet.getCell('R56').font = { name: 'Arial', size: 10, bold: true };
       worksheet.getCell('R56').alignment = { horizontal: 'left' };
-      worksheet.getCell('A56').border = { left: { style: 'medium' } };
-      worksheet.getCell('R56').border = { right: { style: 'medium' } };
 
       // Row heights for data rows (rows 11 to 42)
       for (let rowIdx = 11; rowIdx <= 42; rowIdx++) {
         worksheet.getRow(rowIdx).height = 15.75;
       }
-      // Medium bottom divider border on row 56
+
+      // Outer Medium Borders for the whole signature box (rows 47 to 56)
+      for (let rowIdx = 47; rowIdx <= 56; rowIdx++) {
+        const cellA = worksheet.getRow(rowIdx).getCell(1);
+        const cellR = worksheet.getRow(rowIdx).getCell(18);
+        
+        cellA.border = {
+          ...cellA.border,
+          left: { style: 'medium' }
+        };
+        cellR.border = {
+          ...cellR.border,
+          right: { style: 'medium' }
+        };
+      }
+
+      // Top medium border on row 47
+      for (let col = 1; col <= 18; col++) {
+        const cell = worksheet.getRow(47).getCell(col);
+        cell.border = {
+          ...cell.border,
+          top: { style: 'medium' }
+        };
+      }
+
+      // Bottom medium border on row 56
       for (let col = 1; col <= 18; col++) {
         const cell = worksheet.getRow(56).getCell(col);
         cell.border = {
-          top: cell.border ? cell.border.top : undefined,
-          left: cell.border ? cell.border.left : undefined,
-          right: cell.border ? cell.border.right : undefined,
+          ...cell.border,
           bottom: { style: 'medium' }
         };
       }
+
+      // Draw thin top border for RH signature line above the label VºBº Jefe Depto. Recurso Humano
+      const cellR53 = worksheet.getCell('R53');
+      cellR53.border = {
+        ...cellR53.border,
+        top: { style: 'thin' }
+      };
 
       // Write Excel File Buffer & Download
       const buffer = await workbook.xlsx.writeBuffer();
